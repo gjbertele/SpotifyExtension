@@ -1,0 +1,80 @@
+html {
+    width:400px;
+    height:300px;
+}
+.songList > .songElement {
+    position:absolute;
+    font-family:Arial, Helvetica, sans-serif;
+    font-weight:bold;
+    left:3%;
+    width:90%;
+    height:8%;
+}
+
+.songElement > .title {
+    position:absolute;
+    left:3%;
+    top:5%;
+}
+
+.songElement > .artist {
+    position:absolute;
+    left:36%;
+    top:5%;
+}
+
+.songElement > .skipTime {
+    position:absolute;
+    left:69%;
+    top:5%;
+}
+
+.songElement > .removeButton {
+    position:absolute;
+    left:87%;
+    top:5%;
+    border:none;
+    background:Red;
+    width:7%;
+    height:90%;
+    border-radius:5px;
+}
+
+.removeButton:hover {
+    cursor:pointer;
+}
+
+.titleInput {
+    position:fixed;
+    left:3%;
+    bottom:5%;
+    width:30%;
+    height:8%;
+}
+.artistInput {
+    position:fixed;
+    left:36%;
+    bottom:5%;
+    width:30%;
+    height:8%;
+}
+.timeInput {
+    position:fixed;
+    left:69%;
+    bottom:5%;
+    width:15%;
+    height:8%;
+}
+.submit {
+    position:fixed;
+    left:87%;
+    bottom:5%;
+    width:7%;
+    height:8%;
+    border:none;
+    background:#000;
+    
+}
+.submit:hover{
+    cursor:pointer;
+}
