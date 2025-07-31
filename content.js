@@ -2,11 +2,12 @@ let songList = [];
 async function setup() {
     let updateIntervalMs = 200;
     let lastSkippedTime = Date.now();
+    let songPlaying = false;
 
     let songData = {
-        'title':'',
-        'artist':'',
-        'time':0
+        'title': '',
+        'artist': '',
+        'time': 0
     };
 
     function convertTime(str) {
@@ -24,46 +25,71 @@ async function setup() {
         let artistElement = document.querySelector('[data-testid="context-item-info-subtitles"]');
         let timeElement = document.querySelector('[data-testid="playback-position"]');
 
-        return {
+        let returnObject = {
+            'title': '',
+            'artist': '',
+            'time': 0,
+            'songPlaying': false
+        }
+
+        if (songElement && artistElement && timeElement) returnObject = {
             'title': songElement.innerText,
             'artist': artistElement.innerText,
-            'time': convertTime(timeElement.innerText)
+            'time': convertTime(timeElement.innerText),
+            'songPlaying': true
         }
+
+        return returnObject;
     }
 
     async function newSongPlaying(data) {
         updateSongList();
-        console.log('[SPOTIFY EXTENSION]','new song playing - ', songData);
+
+        let links = document.querySelectorAll(`link[rel~='icon']`);
+        let song = document.querySelector('[data-testid="cover-art-image"]');
+        if (song) {
+            links.forEach(function(link) {
+                link.href = song.src;
+            });
+        }
+
+        console.log('[SPOTIFY EXTENSION]', 'new song playing - ', songData);
 
     }
 
 
 
     function checkSong() {
-        try {
-            let data = getSongData();
+        setTimeout(checkSong, updateIntervalMs);
 
-            if(data.title != songData.title || data.artist != songData.artist){
-                newSongPlaying(data);
-            }
+        let data = getSongData();
+        songPlaying = data.songPlaying;
 
-            songData = data;
+        if (data.songPlaying == false) return;
 
-            songList.forEach(function(song) {
-                if (song.title != data.title || song.artist != data.artist) return;
-                if (data.time >= song.skipTime && Date.now()-lastSkippedTime > 1500) {
-                    console.log('[SPOTIFY EXTENSION]','skip current song');
-                    document.querySelector('[aria-label="Next"]').click();
-                    lastSkippedTime = Date.now();
-
-                }
-            });
-
-        } catch (err) {
-            console.log('[SPOTIFY EXTENSION]',err);
+        if (data.title != songData.title || data.artist != songData.artist) {
+            newSongPlaying(data);
         }
 
-        setTimeout(checkSong, updateIntervalMs)
+        songData = data;
+
+
+        songList.forEach(function(song) {
+            if (song.title != data.title || (song.artist != data.artist || song.artist == '')) return;
+            if (data.time >= song.skipTime && Date.now() - lastSkippedTime > 1500) {
+                console.log('[SPOTIFY EXTENSION]', 'skip current song');
+
+                let backButton = document.querySelector('[data-testid="control-button-skip-back"]');
+                for(let i = 0; i<=data.time/15; i++) backButton.click();
+
+                lastSkippedTime = Date.now();
+
+                setTimeout(function(){
+                    document.querySelector('[aria-label="Next"]').click();
+                },50);
+
+            }
+        });
     }
 
     checkSong();
@@ -73,7 +99,7 @@ async function setup() {
 
     async function updateSongList() {
         let data = await chrome.storage.sync.get('songs');
-        console.log('[SPOTIFY EXTENSION]','fetched skip list data - ', data);
+        console.log('[SPOTIFY EXTENSION]', 'fetched skip list data - ', data);
         songList = data.songs;
         return data.songs;
     }
@@ -84,16 +110,16 @@ async function setup() {
         let data = await chrome.storage.sync.set({
             'songs': songs
         });
-        console.log('[SPOTIFY EXTENSION]','pushed to songlist - ', song);
+        console.log('[SPOTIFY EXTENSION]', 'pushed to songlist - ', song);
         return data;
     }
 
-    async function deleteFromSongList(song){
+    async function deleteFromSongList(song) {
         let songs = await updateSongList();
 
-        for(let i = 0; i<songs.length; i++){
-            if(songs[i].title == song.title && songs[i].artist == song.artist && songs[i].skipTime == song.skipTime){
-                songs.splice(i,1);
+        for (let i = 0; i < songs.length; i++) {
+            if (songs[i].title == song.title && songs[i].artist == song.artist && songs[i].skipTime == song.skipTime) {
+                songs.splice(i, 1);
                 i--;
             }
         }
@@ -101,14 +127,9 @@ async function setup() {
         let data = await chrome.storage.sync.set({
             'songs': songs
         });
-        console.log('[SPOTIFY EXTENSION]','deleted from songlist - ', song);
+        console.log('[SPOTIFY EXTENSION]', 'deleted from songlist - ', song);
         return data;
     }
-
-    chrome.runtime.sendMessage({
-        from: 'content',
-        subject: 'showPageAction',
-    });
 
     chrome.runtime.onMessage.addListener((msg, sender, response) => {
         if ((msg.from === 'popup') && (msg.subject === 'songInfo')) {
