@@ -6,18 +6,37 @@ window.webpackChunkclient_web = window.webpackChunkclient_web || [];
             window.webpackRequire = req;
         }
     ]);
+    
+let spotifyController = {
+    'back':null,
+    'skip':null,
+    'play':null,
+    'pause':null,
 
-let boundFunctions = {};
+};
+
 
 (() => {
-    const originalBind = Function.prototype.bind;
+    const originalBind = navigator.mediaSession.setActionHandler;
 
-    Function.prototype.bind = function(...args) {
+    navigator.mediaSession.setActionHandler = function(...args) {
     
-        if(args && args.length >= 2 && !isNaN(parseInt(args[1]))){
-            let n = parseInt(args[1]);
-            boundFunctions[n] = this;
-            if(n == 48627) console.log(this);
+        if(args[1] != null){
+            console.log(args[0],args[1]);
+            switch(args[0]){
+                case 'previoustrack':
+                    spotifyController.back = args[1];
+                    break;
+                case 'nexttrack':
+                    spotifyController.skip = args[1];
+                    break;
+                case 'play':
+                    spotifyController.play = args[1];
+                    break;
+                case 'pause':
+                    spotifyController.pause = args[1];
+                    break;
+            }
         }
 
         const boundFn = originalBind.apply(this, args);
@@ -27,3 +46,25 @@ let boundFunctions = {};
         };
     };
 })();
+
+
+window.addEventListener('spotifyExtensionMessage', (e) => {
+    if(e.detail.commandType){
+        switch(e.detail.commandType){
+            case 'previoustrack':
+                spotifyController.back();
+                break;
+            case 'nexttrack':
+                spotifyController.skip();
+                break;
+            case 'play':
+                spotifyController.play();
+                break;
+            case 'pause':
+                spotifyController.pause();
+                break;
+        }
+    }
+})
+
+

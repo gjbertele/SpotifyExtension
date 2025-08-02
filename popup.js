@@ -120,3 +120,4 @@ function convertTime(str) {
     }
     return seconds;
 }
+

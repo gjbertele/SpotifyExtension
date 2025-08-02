@@ -1,9 +1,39 @@
 let songList = [];
-async function setup() {
-    let updateIntervalMs = 200;
-    let lastSkippedTime = Date.now();
-    let songPlaying = false;
+let globals = {
+    'updateIntervalMs':200,
+    'lastSkippedTime':Date.now(),
+    'injected':false
+}
 
+class Spotify {
+    Spotify(){
+        return this;
+    }
+
+    skip = function(){
+        let newEvent = new CustomEvent('spotifyExtensionMessage', {'detail':{'commandType':'nexttrack'}});
+        window.dispatchEvent(newEvent);
+    }
+
+    play = function(){
+        let newEvent = new CustomEvent('spotifyExtensionMessage', {'detail':{'commandType':'play'}});
+        window.dispatchEvent(newEvent);
+    }
+
+    pause = function(){
+        let newEvent = new CustomEvent('spotifyExtensionMessage', {'detail':{'commandType':'pause'}});
+        window.dispatchEvent(newEvent);
+    }
+
+    back = function(){
+        let newEvent = new CustomEvent('spotifyExtensionMessage', {'detail':{'commandType':'previoustrack'}});
+        window.dispatchEvent(newEvent);
+    }
+}
+
+
+async function setup() {
+    let spotifyController = new Spotify();
     let songData = {
         'title': '',
         'artist': '',
@@ -60,10 +90,9 @@ async function setup() {
 
 
     function checkSong() {
-        setTimeout(checkSong, updateIntervalMs);
+        setTimeout(checkSong, globals.updateIntervalMs);
 
         let data = getSongData();
-        songPlaying = data.songPlaying;
 
         if (data.songPlaying == false) return;
 
@@ -80,19 +109,22 @@ async function setup() {
             if (song.title != data.title) continue;
             if (song.artist != data.artist && song.artist != '') continue;
 
-            if (data.time >= song.skipTime && Date.now() - lastSkippedTime > 1500) {
+            if (data.time >= song.skipTime && Date.now() - globals.lastSkippedTime > 1500) {
                 console.log('[SPOTIFY EXTENSION]', 'skip current song');
 
-                let backButton = document.querySelector('[data-testid="control-button-skip-back"]');
-                for(let i = 0; i<=data.time/15; i++) backButton.click();
+                //for(let i = 0; i<=data.time/15; i++) backButton.click();
 
-                lastSkippedTime = Date.now();
+                globals.lastSkippedTime = Date.now();
 
                 setTimeout(function(){
                     let newData = getSongData();
                     if(newData.title != song.title) return;
-                    document.querySelector('[aria-label="Next"]').click();
-                    console.log('[SPOTIFY EXTENSION]','followed through skip');
+                    if(globals.injected){
+                        spotifyController.skip();
+                        console.log('[SPOTIFY EXTENSION]','followed through skip');
+                    } else {
+                        console.log('[SPOTIFY EXTENSION]','uninjected, cannot skip');
+                    }
                 },50+Math.random()*50);
 
                 break;
@@ -163,9 +195,14 @@ function testInject(){
     temporaryElement.type = 'text/javascript';
     temporaryElement.src = chrome.runtime.getURL('./inject.js');
 
+    temporaryElement.onload = function(){
+        globals.injected = true;
+    }
 
     document.head.insertBefore(temporaryElement, document.head.firstChild);
+
 }
+
 
 document.addEventListener('readystatechange',function(e){
     if(document.readyState == 'interactive'){
