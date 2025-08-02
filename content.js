@@ -51,23 +51,17 @@ async function setup() {
     }
 
     function getSongData() {
-        let songElement = document.querySelector('[data-testid="context-item-link"]');
-        let artistElement = document.querySelector('[data-testid="context-item-info-subtitles"]');
         let timeElement = document.querySelector('[data-testid="playback-position"]');
+        let metadata = navigator.mediaSession.metadata;
 
         let returnObject = {
-            'title': '',
-            'artist': '',
+            'title': metadata.title,
+            'artist': metadata.artist,
             'time': 0,
             'songPlaying': false
         }
 
-        if (songElement && artistElement && timeElement) returnObject = {
-            'title': songElement.innerText,
-            'artist': artistElement.innerText,
-            'time': convertTime(timeElement.innerText),
-            'songPlaying': true
-        }
+        if (timeElement) returnObject.time = convertTime(timeElement.innerText);
 
         return returnObject;
     }
@@ -76,10 +70,12 @@ async function setup() {
         updateSongList();
 
         let links = document.querySelectorAll(`link[rel~='icon']`);
-        let song = document.querySelector('[data-testid="cover-art-image"]');
-        if (song) {
+        
+        let metadata = navigator.mediaSession.metadata;
+
+        if (metadata.artwork.length > 0) {
             links.forEach(function(link) {
-                link.href = song.src;
+                link.href = metadata.artwork[0].src;
             });
         }
 
