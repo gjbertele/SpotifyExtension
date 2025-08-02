@@ -53,13 +53,19 @@ async function setup() {
     function getSongData() {
         let timeElement = document.querySelector('[data-testid="playback-position"]');
         let metadata = navigator.mediaSession.metadata;
-
         let returnObject = {
-            'title': metadata.title,
-            'artist': metadata.artist,
+            'title': '',
+            'artist': '',
             'time': 0,
             'songPlaying': false
         }
+
+
+        if(!metadata) return returnObject;
+        
+        returnObject.artist = metadata.artist;
+        returnObject.title = metadata.title;
+        returnObject.songPlaying = true;
 
         if (timeElement) returnObject.time = convertTime(timeElement.innerText);
 
@@ -70,7 +76,7 @@ async function setup() {
         updateSongList();
 
         let links = document.querySelectorAll(`link[rel~='icon']`);
-        
+
         let metadata = navigator.mediaSession.metadata;
 
         if (metadata.artwork.length > 0) {
@@ -207,3 +213,13 @@ document.addEventListener('readystatechange',function(e){
 
     if(document.readyState == 'complete') setup();
 });
+
+
+//65001.u is just regular e
+
+/*67069 = (0,
+            n(65001).u)("PlayerAPI")
+            */
+//186 returns 15679
+
+//4666 returns (0,15679.N)(67069.H)
