@@ -16,7 +16,18 @@
           "js": ["content.js"],
           "matches": [
             "https://open.spotify.com/*"
-          ]
+          ],
+          "run_at":"document_start"
         }
-      ]
+      ],
+    "web_accessible_resources":[
+        {
+            "resources":[
+                "inject.js"
+            ],
+            "matches":[
+                "<all_urls>"
+            ]
+        }
+    ]
   }

@@ -53,7 +53,7 @@ async function setup() {
             });
         }
 
-        console.log('[SPOTIFY EXTENSION]', 'new song playing - ', songData);
+        console.log('[SPOTIFY EXTENSION]', 'new song playing - ', data);
 
     }
 
@@ -74,8 +74,12 @@ async function setup() {
         songData = data;
 
 
-        songList.forEach(function(song) {
-            if (song.title != data.title || (song.artist != data.artist || song.artist == '')) return;
+        for(let i = 0; i<songList.length; i++){
+            let song = songList[i];
+
+            if (song.title != data.title) continue;
+            if (song.artist != data.artist && song.artist != '') continue;
+
             if (data.time >= song.skipTime && Date.now() - lastSkippedTime > 1500) {
                 console.log('[SPOTIFY EXTENSION]', 'skip current song');
 
@@ -85,11 +89,15 @@ async function setup() {
                 lastSkippedTime = Date.now();
 
                 setTimeout(function(){
+                    let newData = getSongData();
+                    if(newData.title != song.title) return;
                     document.querySelector('[aria-label="Next"]').click();
-                },50);
+                    console.log('[SPOTIFY EXTENSION]','followed through skip');
+                },50+Math.random()*50);
 
+                break;
             }
-        });
+        }
     }
 
     checkSong();
@@ -149,6 +157,20 @@ async function setup() {
 
 }
 
-document.body.onload = async function() {
-    setup();
+
+function testInject(){
+    let temporaryElement = document.createElement('script');
+    temporaryElement.type = 'text/javascript';
+    temporaryElement.src = chrome.runtime.getURL('./inject.js');
+
+
+    document.head.insertBefore(temporaryElement, document.head.firstChild);
 }
+
+document.addEventListener('readystatechange',function(e){
+    if(document.readyState == 'interactive'){
+        testInject();
+    }
+
+    if(document.readyState == 'complete') setup();
+});
