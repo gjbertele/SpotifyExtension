@@ -8,34 +8,14 @@ window.webpackChunkclient_web.push([
 ]);
 
 
-let spotifyController = {
-    'back': null,
-    'skip': null,
-    'play': null,
-    'pause': null,
-
-};
+let spotifyController = {}
 
 
 const originalActionHandler = navigator.mediaSession.setActionHandler;
 
 navigator.mediaSession.setActionHandler = function(...args) {
     if (args[1] != null) {
-        console.log(args[0], args[1]);
-        switch (args[0]) {
-            case 'previoustrack':
-                spotifyController.back = args[1];
-                break;
-            case 'nexttrack':
-                spotifyController.skip = args[1];
-                break;
-            case 'play':
-                spotifyController.play = args[1];
-                break;
-            case 'pause':
-                spotifyController.pause = args[1];
-                break;
-        }
+        spotifyController[args[0]] = args[1];
     }
 
     const boundFn = originalActionHandler.apply(this, args);
@@ -55,20 +35,5 @@ var getStackTrace = function() {
 
 
 window.addEventListener('spotifyExtensionMessage', (e) => {
-    if (e.detail.commandType) {
-        switch (e.detail.commandType) {
-            case 'previoustrack':
-                spotifyController.back();
-                break;
-            case 'nexttrack':
-                spotifyController.skip();
-                break;
-            case 'play':
-                spotifyController.play();
-                break;
-            case 'pause':
-                spotifyController.pause();
-                break;
-        }
-    }
+    if (e.detail.commandType) spotifyController[e.detail.commandType]();
 })
