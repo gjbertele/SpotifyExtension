@@ -10,67 +10,79 @@ class Spotify {
         return this;
     }
 
-    skip = function(){
-        let newEvent = new CustomEvent('spotifyExtensionMessage', {'detail':{'commandType':'nexttrack'}});
-        window.dispatchEvent(newEvent);
+    skip = () => {
+        this.#postMessage('command', 'nexttrack');
+        return;
     }
 
-    play = function(){
-        let newEvent = new CustomEvent('spotifyExtensionMessage', {'detail':{'commandType':'play'}});
-        window.dispatchEvent(newEvent);
+    back = () => {
+        this.#postMessage('command', 'previoustrack');
+        return;
     }
 
-    pause = function(){
-        let newEvent = new CustomEvent('spotifyExtensionMessage', {'detail':{'commandType':'pause'}});
-        window.dispatchEvent(newEvent);
+    play = () => {
+        this.#postMessage('command', 'play');
+        return;
     }
 
-    back = function(){
-        let newEvent = new CustomEvent('spotifyExtensionMessage', {'detail':{'commandType':'previoustrack'}});
+    pause = () => {
+        this.#postMessage('command', 'pause');
+        return;
+    }
+
+    #postMessage = (type, data) => {
+        let newEvent = new CustomEvent('spotifyExtensionMessage', {
+            'detail':{
+                'type':type,
+                'data':data
+            }
+        });
         window.dispatchEvent(newEvent);
+        return;
+    }
+
+
+
+    #postMessageAsync = async (type, data) => {
+        let newEvent = new CustomEvent('spotifyExtensionMessage', {
+            'detail':{
+                'type':type,
+                'data':data
+            }
+        });
+        let promise = new Promise((resolve) => {
+            window.addEventListener('spotifyExtensionMessageResponse', (e) => {
+                resolve(e.detail.data);
+            }, {once: true});
+        });
+        window.dispatchEvent(newEvent);
+        return promise;
+
+    }
+
+    getSongData = async () => {
+        let songData = await this.#postMessageAsync('dataRequest', 'songData');
+        
+
+        let responseObject = {
+            'songPlaying':false
+        };
+
+        if(songData){
+            responseObject['songPlaying'] = true;
+            responseObject.title = songData.title;
+            responseObject.artist = songData.artist;
+            responseObject.time = songData.time/1000;
+        }
+
+        return responseObject;
     }
 }
 
 
 async function setup() {
     let spotifyController = new Spotify();
-    let songData = {
-        'title': '',
-        'artist': '',
-        'time': 0
-    };
-
-    function convertTime(str) {
-        let segments = str.split(':');
-        let seconds = 0;
-        let length = segments.length;
-        for (let i = 0; i < length; i++) {
-            seconds += parseInt(segments[i]) * Math.pow(60, length - i - 1);
-        }
-        return seconds;
-    }
-
-    function getSongData() {
-        let timeElement = document.querySelector('[data-testid="playback-position"]');
-        let metadata = navigator.mediaSession.metadata;
-        let returnObject = {
-            'title': '',
-            'artist': '',
-            'time': 0,
-            'songPlaying': false
-        }
-
-
-        if(!metadata) return returnObject;
-        
-        returnObject.artist = metadata.artist;
-        returnObject.title = metadata.title;
-        returnObject.songPlaying = true;
-
-        if (timeElement) returnObject.time = convertTime(timeElement.innerText);
-
-        return returnObject;
-    }
+    let songData = {};
 
     async function newSongPlaying(data) {
         updateSongList();
@@ -91,10 +103,10 @@ async function setup() {
 
 
 
-    function checkSong() {
+    async function checkSong() {
         setTimeout(checkSong, globals.updateIntervalMs);
 
-        let data = getSongData();
+        let data = await spotifyController.getSongData();
 
         if (data.songPlaying == false) return;
 
@@ -114,19 +126,14 @@ async function setup() {
             if (data.time >= song.skipTime && Date.now() - globals.lastSkippedTime > 1500) {
                 console.log('[SPOTIFY EXTENSION]', 'skip current song');
 
-                //for(let i = 0; i<=data.time/15; i++) backButton.click();
-
                 globals.lastSkippedTime = Date.now();
 
-                setTimeout(function(){
-                    let newData = getSongData();
+                setTimeout(async function(){
+                    let newData = await spotifyController.getSongData();
                     if(newData.title != song.title) return;
-                    if(globals.injected){
-                        spotifyController.skip();
-                        console.log('[SPOTIFY EXTENSION]','followed through skip');
-                    } else {
-                        console.log('[SPOTIFY EXTENSION]','uninjected, cannot skip');
-                    }
+
+                    spotifyController.skip();
+                    console.log('[SPOTIFY EXTENSION]','followed through skip');
                 },50+Math.random()*50);
 
                 break;
