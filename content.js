@@ -99,6 +99,7 @@ async function setup() {
 
         console.log('[SPOTIFY EXTENSION]', 'new song playing - ', data);
 
+        return;
     }
 
 
@@ -123,22 +124,28 @@ async function setup() {
             if (song.title != data.title) continue;
             if (song.artist != data.artist && song.artist != '') continue;
 
-            if (data.time >= song.skipTime && Date.now() - globals.lastSkippedTime > 1500) {
-                console.log('[SPOTIFY EXTENSION]', 'skip current song');
+            if (data.time >= song.skipTime && Date.now() - globals.lastSkippedTime > 1500) skipCurrentSong();
 
-                globals.lastSkippedTime = Date.now();
-
-                setTimeout(async function(){
-                    let newData = await spotifyController.getSongData();
-                    if(newData.title != song.title) return;
-
-                    spotifyController.skip();
-                    console.log('[SPOTIFY EXTENSION]','followed through skip');
-                },50+Math.random()*50);
-
-                break;
-            }
+           break;
         }
+
+        return;
+    }
+
+    function skipCurrentSong(){
+        console.log('[SPOTIFY EXTENSION]', 'skip current song');
+
+        globals.lastSkippedTime = Date.now();
+
+        setTimeout(async function(){
+            let newData = await spotifyController.getSongData();
+            if(newData.title != song.title) return;
+
+            spotifyController.skip();
+           console.log('[SPOTIFY EXTENSION]','followed through skip');
+        },50+Math.random()*50);
+
+        return;
     }
 
     checkSong();
