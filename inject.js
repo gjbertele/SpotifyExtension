@@ -2,7 +2,6 @@ let APIList;
 let spotifyController = {};
 let playerAPI = null;
 
-
 const initializeWebpackAccess = () => {
     window.webpackChunkclient_web = window.webpackChunkclient_web || [];
     window.webpackChunkclient_web.push([
@@ -15,8 +14,6 @@ const initializeWebpackAccess = () => {
 
     return;
 }
-
-
 
 const overrideActionHandler = () => {
     const originalActionHandler = navigator.mediaSession.setActionHandler;
@@ -52,11 +49,31 @@ const getPlayerAPI = async () => {
 
 const createPlayerAPI = async () => {
     window.playerAPI = await getPlayerAPI();
-    if (window.playerAPI == null) setTimeout(createPlayerAPI, 1000);
+    if (window.playerAPI == null){
+        setTimeout(createPlayerAPI, 1000);
+    } else {
+        playerAPICreated();
+    }
     return;
 }
 
 document.body.onload = createPlayerAPI;
+
+const playerAPICreated = () => {
+    window.playerAPI.getEvents().addListener('update', playerUpdated);
+}
+
+const songPlaying = {};
+
+const playerUpdated = (e) => {
+    if(e.data.item.name == songPlaying.title && e.data.item.artists[0].name == songPlaying.artist) return;
+    songPlaying.title = e.data.item.name;
+    songPlaying.artist = e.data.item.artists[0].name;
+    postAlert({
+        'type':'newSong',
+        'songData': songPlaying
+    });
+}
 
 const commandHandler = (detail) => {
     if (spotifyController[detail.data]) {
@@ -68,6 +85,14 @@ const commandHandler = (detail) => {
 
 const postResponse = (data) => {
     let newEvent = new CustomEvent('spotifyExtensionMessageResponse', {
+        'detail': data
+    });
+
+    window.dispatchEvent(newEvent);
+}
+
+const postAlert = (data) => {
+    let newEvent = new CustomEvent('spotifyExtensionAlert', {
         'detail': data
     });
 

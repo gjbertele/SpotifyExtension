@@ -13,8 +13,9 @@
     ],
     "content_scripts": [
         {
-          "js": ["content.js"],
+          "js": ["spotify.js","content.js"],
           "matches": [
+            "https://open.spotify.com/*",
             "https://open.spotify.com/*"
           ],
           "run_at":"document_start"

@@ -1,220 +1,118 @@
 let songList = [];
-let globals = {
-    'updateIntervalMs':200,
-    'lastSkippedTime':Date.now(),
-    'injected':false
+let lastSkippedTime = Date.now();
+const spotifyController = new Spotify();
+const log = (...args) => {
+    console.log('%c [SPOTIFY-EXTENSION]', 'color: #1DB954',...args);
 }
 
-class Spotify {
-    Spotify(){
-        return this;
-    }
+const newSongPlaying = async (data) => {
+    updateSongList();
 
-    skip = () => {
-        this.#postMessage('command', 'nexttrack');
-        return;
-    }
+    let links = document.querySelectorAll(`link[rel~='icon']`);
 
-    back = () => {
-        this.#postMessage('command', 'previoustrack');
-        return;
-    }
+    let metadata = navigator.mediaSession.metadata;
 
-    play = () => {
-        this.#postMessage('command', 'play');
-        return;
-    }
-
-    pause = () => {
-        this.#postMessage('command', 'pause');
-        return;
-    }
-
-    seekForwards = (t) => {
-        let newEvent = new CustomEvent('spotifyExtensionMessage', {
-            'detail':{
-                'type':'command',
-                'data':'seekforwards',
-                'time':t
-            }
+    if (metadata.artwork.length > 0) {
+        links.forEach(function(link) {
+            link.href = metadata.artwork[0].src;
         });
-        window.dispatchEvent(newEvent);
-        return;
     }
 
-    #postMessage = (type, data) => {
-        let newEvent = new CustomEvent('spotifyExtensionMessage', {
-            'detail':{
-                'type':type,
-                'data':data
-            }
-        });
-        window.dispatchEvent(newEvent);
-        return;
+    updateSongCount();
+
+    log('New song playing - ', data);
+
+    return;
+}
+
+const skipCurrentSong = (song) => {
+    lastSkippedTime = Date.now();
+    log('Skip current song');
+    setTimeout(async function(){
+        let newData = await spotifyController.getSongData();
+        if(newData.title != song.title) return;
+
+        spotifyController.seekForwards(-newData.time);
+        spotifyController.skip();
+        log('Followed through skip');
+    },50+Math.random()*50);
+
+    return;
+}
+
+const checkSong = async () => {
+    let data = await spotifyController.getSongData();
+
+    if (data.songPlaying == false) return;
+
+    for(let i = 0; i<songList.length; i++){
+        let song = songList[i];
+
+        if (song.title != data.title) continue;
+        if (song.artist != data.artist && song.artist != '') continue;
+
+        if (data.time >= song.skipTime && Date.now() - lastSkippedTime > 1500) skipCurrentSong(song);
+
+        break;
     }
 
+    return;
+}
 
-    #postMessageAsync = async (type, data) => {
-        let newEvent = new CustomEvent('spotifyExtensionMessage', {
-            'detail':{
-                'type':type,
-                'data':data
-            }
-        });
-        let promise = new Promise((resolve) => {
-            window.addEventListener('spotifyExtensionMessageResponse', (e) => {
-                resolve(e.detail.data);
-            }, {once: true});
-        });
-        window.dispatchEvent(newEvent);
-        return promise;
+const updateSongList = async () => {
+    let data = await chrome.storage.sync.get('songs');
+    log('Fetched skip list data - ', data);
+    songList = data.songs;
+    return data.songs;
+}
 
-    }
+const pushSongList = async (song) => {
+    let songs = await updateSongList();
+    songs.push(song);
+    let data = await chrome.storage.sync.set({
+        'songs': songs
+    });
+    log('Pushed to songlist - ', song);
+    return data;
+}
 
-    getSongData = async () => {
-        let songData = await this.#postMessageAsync('dataRequest', 'songData');
-        
+const deleteFromSongList = async (song) => {
+    let songs = await updateSongList();
 
-        let responseObject = {
-            'songPlaying':false
-        };
-
-        if(songData){
-            responseObject['songPlaying'] = true;
-            responseObject.title = songData.title;
-            responseObject.artist = songData.artist;
-            responseObject.time = songData.time/1000;
+    for (let i = 0; i < songs.length; i++) {
+        if (songs[i].title == song.title && songs[i].artist == song.artist && songs[i].skipTime == song.skipTime) {
+            songs.splice(i, 1);
+            i--;
         }
-
-        return responseObject;
     }
+
+    let data = await chrome.storage.sync.set({
+        'songs': songs
+    });
+    log('Deleted from songlist - ', song);
+    return data;
 }
 
 
-async function setup() {
-    let spotifyController = new Spotify();
-    let songData = {};
+const updateSongCount = async () => {
+    let data = await chrome.storage.sync.get('songCount');
 
-    async function newSongPlaying(data) {
-        updateSongList();
+    log('Fetched song count data - ', data);
 
-        let links = document.querySelectorAll(`link[rel~='icon']`);
+    let count = 1;
+    if(data && data.songCount) count = data.songCount + 1;
 
-        let metadata = navigator.mediaSession.metadata;
+    chrome.storage.sync.set({
+        'songCount': count
+    });
+}
 
-        if (metadata.artwork.length > 0) {
-            links.forEach(function(link) {
-                link.href = metadata.artwork[0].src;
-            });
+const setup = async () => {
+    window.addEventListener('spotifyExtensionAlert', (e) => {
+        if(e.detail.type == 'newSong'){
+            newSongPlaying(e.detail.songData);
         }
-
-        updateSongCount();
-
-        console.log('[SPOTIFY EXTENSION]', 'new song playing - ', data);
-
-        return;
-    }
-
-
-    async function updateSongCount(){
-        let data = await chrome.storage.sync.get('songCount');
-
-        console.log('[SPOTIFY EXTENSION]', 'fetched song count data - ', data);
-
-        let count = 1;
-        if(data && data.songCount) count = data.songCount + 1;
-
-        chrome.storage.sync.set({
-            'songCount': count
-        });
-
-
-
-    }
-
-    async function checkSong() {
-        setTimeout(checkSong, globals.updateIntervalMs);
-
-        let data = await spotifyController.getSongData();
-
-        if (data.songPlaying == false) return;
-
-        if (data.title != songData.title || data.artist != songData.artist) {
-            newSongPlaying(data);
-        }
-
-        songData = data;
-
-
-        for(let i = 0; i<songList.length; i++){
-            let song = songList[i];
-
-            if (song.title != data.title) continue;
-            if (song.artist != data.artist && song.artist != '') continue;
-
-            if (data.time >= song.skipTime && Date.now() - globals.lastSkippedTime > 1500) skipCurrentSong(song);
-
-           break;
-        }
-
-        return;
-    }
-
-    function skipCurrentSong(song){
-        console.log('[SPOTIFY EXTENSION]', 'skip current song');
-
-        globals.lastSkippedTime = Date.now();
-
-        setTimeout(async function(){
-            let newData = await spotifyController.getSongData();
-            if(newData.title != song.title) return;
-
-            spotifyController.seekForwards(-newData.time);
-            spotifyController.skip();
-           console.log('[SPOTIFY EXTENSION]','followed through skip');
-        },50+Math.random()*50);
-
-        return;
-    }
-
-    checkSong();
-
-
-
-
-    async function updateSongList() {
-        let data = await chrome.storage.sync.get('songs');
-        console.log('[SPOTIFY EXTENSION]', 'fetched skip list data - ', data);
-        songList = data.songs;
-        return data.songs;
-    }
-
-    async function pushSongList(song) {
-        let songs = await updateSongList();
-        songs.push(song);
-        let data = await chrome.storage.sync.set({
-            'songs': songs
-        });
-        console.log('[SPOTIFY EXTENSION]', 'pushed to songlist - ', song);
-        return data;
-    }
-
-    async function deleteFromSongList(song) {
-        let songs = await updateSongList();
-
-        for (let i = 0; i < songs.length; i++) {
-            if (songs[i].title == song.title && songs[i].artist == song.artist && songs[i].skipTime == song.skipTime) {
-                songs.splice(i, 1);
-                i--;
-            }
-        }
-
-        let data = await chrome.storage.sync.set({
-            'songs': songs
-        });
-        console.log('[SPOTIFY EXTENSION]', 'deleted from songlist - ', song);
-        return data;
-    }
+    });
 
     chrome.runtime.onMessage.addListener((msg, sender, response) => {
         if ((msg.from === 'popup') && (msg.subject === 'songInfo')) {
@@ -235,14 +133,13 @@ async function setup() {
 }
 
 
+
+
+
 function testInject(){
     let temporaryElement = document.createElement('script');
     temporaryElement.type = 'text/javascript';
     temporaryElement.src = chrome.runtime.getURL('./inject.js');
-
-    temporaryElement.onload = function(){
-        globals.injected = true;
-    }
 
     document.head.insertBefore(temporaryElement, document.head.firstChild);
 
@@ -250,19 +147,8 @@ function testInject(){
 
 
 document.addEventListener('readystatechange',function(e){
-    if(document.readyState == 'interactive'){
-        testInject();
-    }
-
+    if(document.readyState == 'interactive') testInject();
     if(document.readyState == 'complete') setup();
 });
 
 
-//65001.u is just regular e
-
-/*67069 = (0,
-            n(65001).u)("PlayerAPI")
-            */
-//186 returns 15679
-
-//4666 returns (0,15679.N)(67069.H)

@@ -1,7 +1,6 @@
 function setup(data){
     let songListElem = document.querySelector('.songList');
     let songList = [];
-    console.log('popupData',data);
 
     data.songs.forEach(function(i){
         songList.push(i);
