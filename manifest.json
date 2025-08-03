@@ -24,9 +24,11 @@
     "web_accessible_resources":[
         {
             "resources":[
-                "inject.js"
+                "inject.js",
+                "spotifyController.js"
             ],
             "matches":[
+                "<all_urls>",
                 "<all_urls>"
             ]
         }

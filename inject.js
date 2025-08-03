@@ -1,6 +1,6 @@
 let APIList;
-let spotifyController = {};
 let playerAPI = null;
+let spotifyController;
 
 const initializeWebpackAccess = () => {
     window.webpackChunkclient_web = window.webpackChunkclient_web || [];
@@ -11,25 +11,6 @@ const initializeWebpackAccess = () => {
             window.webpackRequire = req;
         }
     ]);
-
-    return;
-}
-
-const overrideActionHandler = () => {
-    const originalActionHandler = navigator.mediaSession.setActionHandler;
-
-    navigator.mediaSession.setActionHandler = function(...args) {
-        if (args[1] != null) {
-            spotifyController[args[0]] = args[1];
-        }
-
-        const boundFn = originalActionHandler.apply(this, args);
-
-        return function(...callArgs) {
-            return boundFn.apply(this, callArgs);
-        };
-
-    };
 
     return;
 }
@@ -61,6 +42,7 @@ document.body.onload = createPlayerAPI;
 
 const playerAPICreated = () => {
     window.playerAPI.getEvents().addListener('update', playerUpdated);
+    spotifyController = new SpotifyController(window.playerAPI);
 }
 
 const songPlaying = {};
@@ -79,7 +61,7 @@ const commandHandler = (detail) => {
     if (spotifyController[detail.data]) {
         spotifyController[detail.data]();
     } else if (detail.data == 'seekforwards') {
-        window.playerAPI.seekForward(detail.time * 1000);
+        spotifyController.seekForward(detail.time * 1000);
     }
 }
 
@@ -129,5 +111,4 @@ const initializeConnectionChannel = () => {
 }
 
 initializeWebpackAccess();
-overrideActionHandler();
 initializeConnectionChannel();

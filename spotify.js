@@ -4,12 +4,12 @@ class Spotify {
     }
 
     skip = () => {
-        this.#postMessage('command', 'nexttrack');
+        this.#postMessage('command', 'skip');
         return;
     }
 
     back = () => {
-        this.#postMessage('command', 'previoustrack');
+        this.#postMessage('command', 'back');
         return;
     }
 

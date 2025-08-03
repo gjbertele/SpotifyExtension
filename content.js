@@ -12,7 +12,7 @@ const newSongPlaying = async (data) => {
 
     let metadata = navigator.mediaSession.metadata;
 
-    if (metadata.artwork.length > 0) {
+    if (metadata && metadata.artwork.length > 0) {
         links.forEach(function(link) {
             link.href = metadata.artwork[0].src;
         });
@@ -133,16 +133,22 @@ const setup = async () => {
 }
 
 
+const injectFile = (fileName, callback) => {
 
+    let temporaryElement = document.createElement('script');
+    temporaryElement.type = 'text/javascript';
+    temporaryElement.src = chrome.runtime.getURL(`./${fileName}`);
+
+    if(callback) temporaryElement.onload = callback;
+
+    document.head.insertBefore(temporaryElement, document.head.firstChild);
+}
 
 
 function testInject(){
-    let temporaryElement = document.createElement('script');
-    temporaryElement.type = 'text/javascript';
-    temporaryElement.src = chrome.runtime.getURL('./inject.js');
-
-    document.head.insertBefore(temporaryElement, document.head.firstChild);
-
+    injectFile('spotifyController.js');
+    injectFile('inject.js');
+    
 }
 
 
