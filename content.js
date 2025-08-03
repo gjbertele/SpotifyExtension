@@ -30,6 +30,18 @@ class Spotify {
         return;
     }
 
+    seekForwards = (t) => {
+        let newEvent = new CustomEvent('spotifyExtensionMessage', {
+            'detail':{
+                'type':'command',
+                'data':'seekforwards',
+                'time':t
+            }
+        });
+        window.dispatchEvent(newEvent);
+        return;
+    }
+
     #postMessage = (type, data) => {
         let newEvent = new CustomEvent('spotifyExtensionMessage', {
             'detail':{
@@ -40,7 +52,6 @@ class Spotify {
         window.dispatchEvent(newEvent);
         return;
     }
-
 
 
     #postMessageAsync = async (type, data) => {
@@ -97,12 +108,29 @@ async function setup() {
             });
         }
 
+        updateSongCount();
+
         console.log('[SPOTIFY EXTENSION]', 'new song playing - ', data);
 
         return;
     }
 
 
+    async function updateSongCount(){
+        let data = await chrome.storage.sync.get('songCount');
+
+        console.log('[SPOTIFY EXTENSION]', 'fetched song count data - ', data);
+
+        let count = 1;
+        if(data && data.songCount) count = data.songCount + 1;
+
+        chrome.storage.sync.set({
+            'songCount': count
+        });
+
+
+
+    }
 
     async function checkSong() {
         setTimeout(checkSong, globals.updateIntervalMs);
@@ -124,7 +152,7 @@ async function setup() {
             if (song.title != data.title) continue;
             if (song.artist != data.artist && song.artist != '') continue;
 
-            if (data.time >= song.skipTime && Date.now() - globals.lastSkippedTime > 1500) skipCurrentSong();
+            if (data.time >= song.skipTime && Date.now() - globals.lastSkippedTime > 1500) skipCurrentSong(song);
 
            break;
         }
@@ -132,7 +160,7 @@ async function setup() {
         return;
     }
 
-    function skipCurrentSong(){
+    function skipCurrentSong(song){
         console.log('[SPOTIFY EXTENSION]', 'skip current song');
 
         globals.lastSkippedTime = Date.now();
@@ -141,6 +169,7 @@ async function setup() {
             let newData = await spotifyController.getSongData();
             if(newData.title != song.title) return;
 
+            spotifyController.seekForwards(-newData.time);
             spotifyController.skip();
            console.log('[SPOTIFY EXTENSION]','followed through skip');
         },50+Math.random()*50);

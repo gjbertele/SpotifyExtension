@@ -26,11 +26,15 @@ navigator.mediaSession.setActionHandler = function(...args) {
 
 };
 
+let APIList;
+
 async function getAPIs(){
+    if(APIList) return APIList;
     let x = webpackRequire(48627)
     let y = await x.createPlatformWeb()
     let z = y.getRegistry();
-    return Array.from(z._map)
+    APIList = Array.from(z._map);
+    return APIList;
 }
 
 async function getPlayerAPI(){
@@ -45,13 +49,20 @@ async function createPlayerAPI(){
     
 }
 
-document.body.onload = createPlayerAPI;
+
+document.body.onload = () => {
+    createPlayerAPI();
+}
 
 
 window.addEventListener('spotifyExtensionMessage', (e) => {
 
     if (e.detail.type == 'command'){
-        spotifyController[e.detail.data]();
+        if(spotifyController[e.detail.data]){
+            spotifyController[e.detail.data]();
+        } else if(e.detail.data == 'seekforwards'){
+            window.playerAPI.seekForward(e.detail.time*1000);
+        }
     } else if(e.detail.type == 'dataRequest'){
         if(e.detail.data == 'songData'){
             let detail = {}
@@ -71,3 +82,4 @@ window.addEventListener('spotifyExtensionMessage', (e) => {
         }
     }
 })
+
