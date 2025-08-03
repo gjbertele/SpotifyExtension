@@ -1,35 +1,44 @@
-window.webpackChunkclient_web = window.webpackChunkclient_web || [];
-window.webpackChunkclient_web.push([
-    [Math.random()],
-    {},
-    (req) => {
-        window.webpackRequire = req;
-    }
-]);
+let APIList;
+let spotifyController = {};
+let playerAPI = null;
 
 
-let spotifyController = {}
+const initializeWebpackAccess = () => {
+    window.webpackChunkclient_web = window.webpackChunkclient_web || [];
+    window.webpackChunkclient_web.push([
+        [Math.random()],
+        {},
+        (req) => {
+            window.webpackRequire = req;
+        }
+    ]);
+
+    return;
+}
 
 
-const originalActionHandler = navigator.mediaSession.setActionHandler;
 
-navigator.mediaSession.setActionHandler = function(...args) {
-    if (args[1] != null) {
-        spotifyController[args[0]] = args[1];
-    }
+const overrideActionHandler = () => {
+    const originalActionHandler = navigator.mediaSession.setActionHandler;
 
-    const boundFn = originalActionHandler.apply(this, args);
+    navigator.mediaSession.setActionHandler = function(...args) {
+        if (args[1] != null) {
+            spotifyController[args[0]] = args[1];
+        }
 
-    return function(...callArgs) {
-        return boundFn.apply(this, callArgs );
+        const boundFn = originalActionHandler.apply(this, args);
+
+        return function(...callArgs) {
+            return boundFn.apply(this, callArgs);
+        };
+
     };
 
-};
+    return;
+}
 
-let APIList;
-
-async function getAPIs(){
-    if(APIList) return APIList;
+const getAPIs = async () => {
+    if (APIList) return APIList;
     let x = webpackRequire(48627)
     let y = await x.createPlatformWeb()
     let z = y.getRegistry();
@@ -37,49 +46,63 @@ async function getAPIs(){
     return APIList;
 }
 
-async function getPlayerAPI(){
+const getPlayerAPI = async () => {
     return (await getAPIs())[19][1].instance;
 }
 
-let playerAPI = null;
-
-async function createPlayerAPI(){
-    window.playerAPI  = await getPlayerAPI();
-    if(window.playerAPI == null) setTimeout(createPlayerAPI, 1000);
-    
+const createPlayerAPI = async () => {
+    window.playerAPI = await getPlayerAPI();
+    if (window.playerAPI == null) setTimeout(createPlayerAPI, 1000);
+    return;
 }
 
+document.body.onload = createPlayerAPI;
 
-document.body.onload = () => {
-    createPlayerAPI();
-}
-
-
-window.addEventListener('spotifyExtensionMessage', (e) => {
-
-    if (e.detail.type == 'command'){
-        if(spotifyController[e.detail.data]){
-            spotifyController[e.detail.data]();
-        } else if(e.detail.data == 'seekforwards'){
-            window.playerAPI.seekForward(e.detail.time*1000);
-        }
-    } else if(e.detail.type == 'dataRequest'){
-        if(e.detail.data == 'songData'){
-            let detail = {}
-            if(window.playerAPI != null && window.playerAPI._harmony._controller._state){
-                let controller = window.playerAPI._harmony._controller;
-                detail.data = {
-                    'title': controller._state.track_window.current_track.name,
-                    'artist': controller._state.track_window.current_track.artists[0].name,
-                    'time': controller._progressPosition
-                }
-            }
-            let newEvent = new CustomEvent('spotifyExtensionMessageResponse',{
-                'detail': detail
-            });
-
-            window.dispatchEvent(newEvent);
-        }
+const commandHandler = (detail) => {
+    if (spotifyController[detail.data]) {
+        spotifyController[detail.data]();
+    } else if (detail.data == 'seekforwards') {
+        window.playerAPI.seekForward(detail.time * 1000);
     }
-})
+}
 
+const postResponse = (data) => {
+    let newEvent = new CustomEvent('spotifyExtensionMessageResponse', {
+        'detail': data
+    });
+
+    window.dispatchEvent(newEvent);
+}
+
+const dataRequestHandler = (detail) => {
+    if (detail.data == 'songData') {
+        let newDetail = {}
+
+        if (window.playerAPI != null && window.playerAPI._harmony._controller._state) {
+            let controller = window.playerAPI._harmony._controller;
+            newDetail.data = {
+                'title': controller._state.track_window.current_track.name,
+                'artist': controller._state.track_window.current_track.artists[0].name,
+                'time': controller._progressPosition
+            }
+        }
+
+        postResponse(newDetail)
+    }
+}
+
+const initializeConnectionChannel = () => {
+    window.addEventListener('spotifyExtensionMessage', (e) => {
+        if (e.detail.type == 'command') {
+            commandHandler(e.detail)
+        } else if (e.detail.type == 'dataRequest') {
+            dataRequestHandler(e.detail)
+        }
+    });
+
+    return;
+}
+
+initializeWebpackAccess();
+overrideActionHandler();
+initializeConnectionChannel();
