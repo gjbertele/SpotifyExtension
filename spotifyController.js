@@ -1,18 +1,36 @@
 class SpotifyController {
-    #playerAPI
-    SpotifyController(api){
-        this.#playerAPI = api;
-
-        this.skip = this.#playerAPI.skipToNext;
-        this.back = this.#playerAPI.skipToPrevious;
-        this.pause = this.#playerAPI.pause;
-        this.play = this.#playerAPI.resume;
-        this.seekForwards = this.#playerAPI.seekForwards;
+    playerAPI;
+    mediaElement;
+    
+    skip = () => {
+        this.playerAPI.skipToNext();
     }
-    skip;
-    back;
-    pause;
-    play;
-    seekForwards;
 
+    back = () => {
+        this.playerAPI.skipToPrevious();
+    }
+
+    pause = () => {
+        this.playerAPI.pause();
+    }
+
+    play = () => {
+        this.playerAPI.resume();
+    }
+
+    seekForwards = (t) => {
+        this.playerAPI.seekForwards(t);
+    }
+
+    #getQueuePrivate = async () => {
+        return await this.playerAPI.getQueue();
+    }
+
+    getQueue = async () => {
+        return (await this.#getQueuePrivate()).nextUp;
+    }
+
+    getCurrentSong = async () => {
+        return (await this.#getQueuePrivate()).current;
+    }
 }

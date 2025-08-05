@@ -1,6 +1,17 @@
-let APIList;
-let playerAPI = null;
-let spotifyController;
+let APIList, spotifyController;
+
+const patchPlayerElement = () => {
+    const originalPlay = HTMLMediaElement.prototype.play;
+
+    HTMLMediaElement.prototype.play = function (...args) {
+        if(this.src && spotifyController){
+            spotifyController.mediaElement = this; 
+            
+        }
+        return originalPlay.apply(this, args);
+    }
+    
+}
 
 const initializeWebpackAccess = () => {
     window.webpackChunkclient_web = window.webpackChunkclient_web || [];
@@ -42,7 +53,9 @@ document.body.onload = createPlayerAPI;
 
 const playerAPICreated = () => {
     window.playerAPI.getEvents().addListener('update', playerUpdated);
-    spotifyController = new SpotifyController(window.playerAPI);
+
+    spotifyController = new SpotifyController();
+    spotifyController.playerAPI = window.playerAPI;
 }
 
 const songPlaying = {};
@@ -110,5 +123,7 @@ const initializeConnectionChannel = () => {
     return;
 }
 
+patchPlayerElement();
 initializeWebpackAccess();
 initializeConnectionChannel();
+
