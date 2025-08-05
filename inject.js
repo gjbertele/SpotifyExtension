@@ -1,16 +1,42 @@
-let APIList, spotifyController;
+let APIList, spotifyController, APIHandler, onPlayerLoad = [];
 
 const patchPlayerElement = () => {
     const originalPlay = HTMLMediaElement.prototype.play;
 
     HTMLMediaElement.prototype.play = function (...args) {
-        if(this.src && spotifyController){
+        if(this.parentElement == null && this.src && spotifyController){
             spotifyController.mediaElement = this; 
             
+            insertAudioContext(this);
         }
         return originalPlay.apply(this, args);
     }
     
+}
+
+const insertAudioContext = (element) => {
+    if(spotifyController.audioCtx) return;
+
+    const audioCtx = new AudioContext();
+    const source = audioCtx.createMediaElementSource(element);
+
+    const analyzerNode = audioCtx.createAnalyser();
+    const biquadNode = audioCtx.createBiquadFilter();
+
+    source.connect(biquadNode);
+
+    biquadNode.connect(analyzerNode);
+    biquadNode.type = 'lowshelf';
+
+
+    analyzerNode.connect(audioCtx.destination);
+    analyzerNode.fftSize = 2048;
+
+    spotifyController.audioCtx = audioCtx;
+    spotifyController.audioNodes = {
+        'analyzerNode':analyzerNode,
+        'biquadNode':biquadNode
+    }
 }
 
 const initializeWebpackAccess = () => {
@@ -28,7 +54,7 @@ const initializeWebpackAccess = () => {
 
 const getAPIs = async () => {
     if (APIList) return APIList;
-    let APIHandler;
+    APIHandler = null;
     for(let id in webpackRequire.m){
         let mod = webpackRequire(id);
         if(mod.createPlatformWeb){
@@ -36,8 +62,8 @@ const getAPIs = async () => {
             break;
         }
     }
-    if(!APIHandler) throw new Error('No API handler found');
-    
+    if(APIHandler == null) throw new Error('No API handler found');
+
     let y = await APIHandler.createPlatformWeb();
     let z = y.getRegistry();
     APIList = Array.from(z._map);
@@ -47,6 +73,8 @@ const getAPIs = async () => {
 const getPlayerAPI = async () => {
     return (await getAPIs())[19][1].instance;
 }
+
+window.getPlayerAPI = getPlayerAPI;
 
 const createPlayerAPI = async () => {
     window.playerAPI = await getPlayerAPI();
@@ -64,7 +92,16 @@ const playerAPICreated = () => {
     window.playerAPI.getEvents().addListener('update', playerUpdated);
 
     spotifyController = new SpotifyController();
-    spotifyController.playerAPI = window.playerAPI;
+    spotifyController.setPlayerAPI(window.playerAPI);
+    spotifyController.setAPIHandler(APIHandler);
+
+    window.spotifyController = spotifyController;
+
+    window.playerAPI.getEvents().addListener('update', spotifyController.playerUpdate);
+
+    let newEvent = new CustomEvent('spotifyControllerCreated');
+    window.dispatchEvent(newEvent);
+    
 }
 
 const songPlaying = {};

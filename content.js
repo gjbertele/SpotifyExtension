@@ -9,16 +9,6 @@ const log = (...args) => {
 const newSongPlaying = async (data) => {
     updateSongList();
 
-    let links = document.querySelectorAll(`link[rel~='icon']`);
-
-    let metadata = navigator.mediaSession.metadata;
-
-    if (metadata && metadata.artwork.length > 0) {
-        links.forEach(function(link) {
-            link.href = metadata.artwork[0].src;
-        });
-    }
-
     updateSongCount();
 
     log('New song playing - ', data);
@@ -149,6 +139,7 @@ const injectFile = (fileName, callback) => {
 function testInject(){
     injectFile('spotifyController.js');
     injectFile('inject.js');
+    injectFile('addons.js')
     
 }
 

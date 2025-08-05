@@ -25,9 +25,11 @@
         {
             "resources":[
                 "inject.js",
-                "spotifyController.js"
+                "spotifyController.js",
+                "addons.js"
             ],
             "matches":[
+                "<all_urls>",
                 "<all_urls>",
                 "<all_urls>"
             ]
