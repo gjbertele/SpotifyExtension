@@ -28,8 +28,17 @@ const initializeWebpackAccess = () => {
 
 const getAPIs = async () => {
     if (APIList) return APIList;
-    let x = webpackRequire(48627)
-    let y = await x.createPlatformWeb()
+    let APIHandler;
+    for(let id in webpackRequire.m){
+        let mod = webpackRequire(id);
+        if(mod.createPlatformWeb){
+            APIHandler = mod;
+            break;
+        }
+    }
+    if(!APIHandler) throw new Error('No API handler found');
+    
+    let y = await APIHandler.createPlatformWeb();
     let z = y.getRegistry();
     APIList = Array.from(z._map);
     return APIList;
@@ -123,7 +132,10 @@ const initializeConnectionChannel = () => {
     return;
 }
 
-patchPlayerElement();
-initializeWebpackAccess();
-initializeConnectionChannel();
-
+try {
+    patchPlayerElement();
+    initializeWebpackAccess();
+    initializeConnectionChannel();
+} catch(err){
+    console.log(err);
+}

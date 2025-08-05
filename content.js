@@ -1,6 +1,7 @@
 let songList = [];
 let lastSkippedTime = Date.now();
 const spotifyController = new Spotify();
+
 const log = (...args) => {
     console.log('%c [SPOTIFY-EXTENSION]', 'color: #1DB954',...args);
 }
