@@ -9,8 +9,6 @@ const attachLinks = () => {
         });
     }
 
-    console.log('triggered');
-
 }
 
 const setupAttachLinks = () => {

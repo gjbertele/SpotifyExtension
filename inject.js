@@ -117,10 +117,12 @@ const playerUpdated = (e) => {
 }
 
 const commandHandler = (detail) => {
-    if (spotifyController[detail.data]) {
-        spotifyController[detail.data]();
-    } else if (detail.data == 'seekforwards') {
+    if(detail.data == 'seekforwards'){
         spotifyController.seekForward(detail.time * 1000);
+    } else if(detail.data == 'bassboost'){
+        spotifyController.bassBoost(detail.dbDiff);
+    } else if (spotifyController[detail.data]) {
+        spotifyController[detail.data]();
     }
 }
 

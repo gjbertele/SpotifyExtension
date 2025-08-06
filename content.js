@@ -106,20 +106,28 @@ const setup = async () => {
     });
 
     chrome.runtime.onMessage.addListener((msg, sender, response) => {
-        if ((msg.from === 'popup') && (msg.subject === 'songInfo')) {
+        if(msg.from != 'popup') return;
+
+        if (msg.subject === 'songInfo') {
             response({
                 songs: songList
             });
         }
-        if ((msg.from === 'popup') && (msg.subject === 'songUpdate')) {
+        if (msg.subject === 'songUpdate') {
             pushSongList(msg.songData);
             response(true);
         }
-        if ((msg.from === 'popup') && (msg.subject === 'deleteSong')) {
+        if (msg.subject === 'deleteSong') {
             deleteFromSongList(msg.songData);
             response(true);
         }
+        if(msg.subject == 'bassUpdate'){
+            spotifyController.bassBoost(msg.bassVal);
+            response(true);
+        }
     });
+
+    setInterval(checkSong, 1000);
 
 }
 

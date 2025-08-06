@@ -23,6 +23,17 @@ class Spotify {
         return;
     }
 
+    bassBoost = (db) => {
+        let newEvent = new CustomEvent('spotifyExtensionMessage', {
+            'detail':{
+                'type':'command',
+                'data':'bassboost',
+                'dbDiff':db
+            }
+        });
+        window.dispatchEvent(newEvent);
+    }
+
     seekForwards = (t) => {
         let newEvent = new CustomEvent('spotifyExtensionMessage', {
             'detail':{

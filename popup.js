@@ -39,7 +39,6 @@ function setup(data){
 
 function sentCallback(info){
     console.log('callback',info);
-    window.location.reload();
 }
 
 function convertSecondsToTime(num){
@@ -73,6 +72,7 @@ function generateSongElem(song){
     
     let removeButton = document.createElement('div');
     removeButton.className = 'removeButton';
+    removeButton.textContent = 'X'
     elem.appendChild(removeButton);
 
     removeButton.onclick = function(e){
@@ -95,6 +95,28 @@ function generateSongElem(song){
     return elem;
 }
 
+function addListeners(){
+
+
+    document.querySelector('.bassInput').addEventListener('change', (e) => {
+        let val = document.querySelector('.bassInput').value;
+        let str = val;
+        if(val >= 0) str = "+"+val;
+        document.querySelector('.bassText').textContent = `Bass (${str}db)`;
+        console.log('update to ',val);
+
+        chrome.tabs.query({
+            active: true,
+            currentWindow: true
+          }, tabs => {
+            chrome.tabs.sendMessage(
+                tabs[0].id,
+                {from: 'popup', subject: 'bassUpdate', bassVal:val},
+                sentCallback);
+          });
+    });
+}
+
 window.addEventListener('DOMContentLoaded', () => {
     chrome.tabs.query({
       active: true,
@@ -105,6 +127,8 @@ window.addEventListener('DOMContentLoaded', () => {
           {from: 'popup', subject: 'songInfo'},
           setup);
     });
+
+    addListeners();
 
 
 });
@@ -120,4 +144,3 @@ function convertTime(str) {
     }
     return seconds;
 }
-

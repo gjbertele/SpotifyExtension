@@ -9,10 +9,22 @@
     <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-    <div class="songList"></div>
-    <input class="titleInput" type="text">
-    <input class="artistInput" type="text">
-    <input class="timeInput" type="text">
-    <div class="submit"></div>
+    <div class="songSkipMenu">
+        <div class="songList"></div>
+        <input class="input titleInput" type="text" placeholder="Song Title">
+        <input class="input artistInput" type="text" placeholder="Artist (Optional)">
+        <input class="input timeInput" type="text" placeholder="Time">
+        <div class="submit">
+            <svg class="plus">
+            <path d="M15.25 8a.75.75 0 0 1-.75.75H8.75v5.75a.75.75 0 0 1-1.5 0V8.75H1.5a.75.75 0 0 1 0-1.5h5.75V1.5a.75.75 0 0 1 1.5 0v5.75h5.75a.75.75 0 0 1 .75.75"></path>
+            </svg>
+        </div>
+    </div>
+    <div class="songManagerMenu">
+        <div class='row'>
+            <input class="input bassInput" type="range" value="0" min="-10" max="10">
+            <span class="bassText">Bass (+0db)</span>
+        </div>
+    </div>
 </body>
 </html>

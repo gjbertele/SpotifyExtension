@@ -43,7 +43,6 @@ class SpotifyController {
             this.audioNodes['biquadNode'].frequency.value = 120;
             this.audioNodes['biquadNode'].gain.value = db;
         }
-
         return;
     }
 
@@ -105,7 +104,9 @@ class SpotifyController {
     playerUpdate = (event) => {
         const item = event.data.item;
         if(!this.#lastSongPlaying || item.name != this.#lastSongPlaying.name) this.#triggerEvent('newsong', event.data);
-        if(!this.#lastSongPlaying) this.#lastSongPlaying = this.getCurrentSong();
+        
+        this.#lastSongPlaying = this.getCurrentSong();
+
         return;
     }
 
