@@ -16,43 +16,9 @@ const newSongPlaying = async (data) => {
     return;
 }
 
-const skipCurrentSong = (song) => {
-    lastSkippedTime = Date.now();
-    log('Skip current song');
-    setTimeout(async function(){
-        let newData = await spotifyController.getSongData();
-        if(newData.title != song.title) return;
-
-        spotifyController.seekForwards(-newData.time);
-        spotifyController.skip();
-        log('Followed through skip');
-    },50+Math.random()*50);
-
-    return;
-}
-
-const checkSong = async () => {
-    let data = await spotifyController.getSongData();
-
-    if (data.songPlaying == false) return;
-    
-    for(let i = 0; i<songList.length; i++){
-        let song = songList[i];
-        
-        if (song.title != data.title) continue;
-        if (song.artist != data.artist && song.artist != '') continue;
-
-        if (data.time >= song.skipTime && Date.now() - lastSkippedTime > 1500) skipCurrentSong(song);
-
-        break;
-    }
-
-    return;
-}
-
 const updateSongList = async () => {
     let data = await chrome.storage.sync.get('songs');
-    log('Fetched skip list data - ', data);
+    
     songList = data.songs;
     return data.songs;
 }
@@ -105,9 +71,27 @@ const setup = async () => {
         }
     });
 
-    chrome.runtime.onMessage.addListener((msg, sender, response) => {
-        if(msg.from != 'popup') return;
+    window.addEventListener('spotifyExtensionMessage', async (e) => {
+        if(e.detail.type == 'songListRequest'){
+            let newSongList = await updateSongList();
+            let customEvent = new CustomEvent('spotifyExtensionMessageResponse', {
+                'detail': {
+                    'data':newSongList
+                }
+            });
+            window.dispatchEvent(customEvent);
+        }
+    })
 
+    chrome.runtime.onMessage.addListener(async (msg, sender, response) => {
+        if(msg.from != 'popup') return;
+        if(msg.forward === true){
+            let forwardedResponse = await postMessageToInjectedAsync('audioDataRequest'); 
+            response({
+                'data':forwardedResponse.data
+            });
+            return;
+        }
         if (msg.subject === 'songInfo') {
             response({
                 songs: songList
@@ -127,7 +111,24 @@ const setup = async () => {
         }
     });
 
-    setInterval(checkSong, 1000);
+}
+
+const postMessageToInjectedAsync = async (type) => {
+    let id = Math.random();
+    let customEvent = new CustomEvent('spotifyExtensionMessage', {
+        'detail':{
+            'type':type,
+            'id':id
+        }
+    });
+    return new Promise((resolve) => {
+        const temp = (e) => {
+            if(e.detail.id != id) return;
+            resolve(e.detail);
+        }
+        window.addEventListener('spotifyExtensionMessageResponse',temp);
+        window.dispatchEvent(customEvent);
+    });
 
 }
 
@@ -150,6 +151,8 @@ function testInject(){
     injectFile('addons.js')
     
 }
+
+
 
 
 document.addEventListener('readystatechange',function(e){

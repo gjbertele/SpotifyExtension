@@ -33,7 +33,7 @@ class SpotifyController {
     }
 
     seekForwards = (t) => {
-        if(this.playerAPI) this.playerAPI.seekForwards(t);
+        if(this.playerAPI) this.playerAPI.seekForward(t);
 
         return;
     }
@@ -43,6 +43,7 @@ class SpotifyController {
             this.audioNodes['biquadNode'].frequency.value = 120;
             this.audioNodes['biquadNode'].gain.value = db;
         }
+
         return;
     }
 

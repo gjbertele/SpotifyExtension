@@ -192,3 +192,17 @@ body {
     line-height:24px;
     vertical-align:middle;
 }
+
+.sidebar {
+    position:absolute;
+    left:80%;
+    top:0%;
+    width:60px;
+    height:70px;
+}
+
+.sidebarDisplay {
+    position:absolute;
+    left:0;
+    top:0;
+}

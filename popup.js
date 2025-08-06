@@ -1,4 +1,6 @@
-function setup(data){
+let sideCanvas, sideCtx;
+
+const setup = (data) => {
     let songListElem = document.querySelector('.songList');
     let songList = [];
 
@@ -34,14 +36,16 @@ function setup(data){
           });
 
     }
+
+    initializeSidebarCanvas();
 }
 
 
-function sentCallback(info){
+const sentCallback = (info) => {
     console.log('callback',info);
 }
 
-function convertSecondsToTime(num){
+const convertSecondsToTime = (num) => {
     let mins = (Math.floor(num/60)).toString();
     let secs = (num%60).toString();
     if(mins.length == 0) mins = "0"+mins;
@@ -50,7 +54,7 @@ function convertSecondsToTime(num){
     return mins+":"+secs;
 }
 
-function generateSongElem(song){
+const generateSongElem = (song) => {
     let elem = document.createElement('div');
 
     elem.className = 'songElement';
@@ -95,9 +99,7 @@ function generateSongElem(song){
     return elem;
 }
 
-function addListeners(){
-
-
+const addListeners = () => {
     document.querySelector('.bassInput').addEventListener('change', (e) => {
         let val = document.querySelector('.bassInput').value;
         let str = val;
@@ -132,10 +134,87 @@ window.addEventListener('DOMContentLoaded', () => {
 
 
 });
+
+
+const postMessageToInjectedAsync = async (type) => {
+    return new Promise((resolve) => {
+        chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+            chrome.tabs.sendMessage(
+                tabs[0].id,
+                {
+                    from: 'popup', 
+                    forward:true, 
+                    subject: type
+                },
+                (response) => {
+                    resolve(response.data);
+                });
+          });
+    });
+}
+
+const initializeSidebarCanvas = () => {
+    sideCanvas = document.querySelector('.sidebarDisplay');
+    sideCtx = sideCanvas.getContext('2d');
+
+    sideCanvas.width = 60;
+    sideCanvas.height = 70;
+
+
+    drawSidebarCanvas();
+}
+
+const drawSidebarCanvas = async () => {
+    let w = sideCanvas.width;
+    let h = sideCanvas.height;
+
+    let rawData = await postMessageToInjectedAsync('audioDataRequest');
+
+
+    sideCtx.clearRect(0,0,w,h);
+    
+
+    let data = [];
+    for(let i in rawData) data.push(rawData[i]);
+
+    let blocks = 7;
+    let length = data.length;
+    let blockedData = new Array(blocks);
+    
+    for(let i = 0; i<blocks; i++) blockedData[i] = 0;
+
+    for(let i = 0; i<length; i++){
+        let newIdx = Math.floor(blocks*i/length);
+        blockedData[newIdx] += data[i];
+    }
+
+
+    sideCtx.fillStyle = '#1db954';
+
+    let arr = new Array(blocks);
+
+    for(let i = 0; i<blocks; i++){
+        blockedData[i] /= length/blocks;
+
+        let transformedData = blockedData[i]*70/256;
+        if(transformedData < 0) transformedData = 0;
+        if(transformedData > 70) transformedData = 70;
+
+        arr[i] = transformedData;
+
+        let startingX = i*60/blocks;
+        sideCtx.fillRect(startingX, h-transformedData, 50/blocks, transformedData);
+
+    }
+
+
+    requestAnimationFrame(drawSidebarCanvas);
+}
+
   
 
 
-function convertTime(str) {
+const convertTime = (str) => {
     let segments = str.split(':');
     let seconds = 0;
     let length = segments.length;

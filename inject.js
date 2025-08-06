@@ -118,7 +118,7 @@ const playerUpdated = (e) => {
 
 const commandHandler = (detail) => {
     if(detail.data == 'seekforwards'){
-        spotifyController.seekForward(detail.time * 1000);
+        spotifyController.seekForwards(detail.time * 1000);
     } else if(detail.data == 'bassboost'){
         spotifyController.bassBoost(detail.dbDiff);
     } else if (spotifyController[detail.data]) {
@@ -142,8 +142,7 @@ const postAlert = (data) => {
     window.dispatchEvent(newEvent);
 }
 
-const dataRequestHandler = (detail) => {
-    if (detail.data == 'songData') {
+const songDataRequest = (detail) => {
         let newDetail = {}
 
         if (window.playerAPI != null && window.playerAPI._harmony._controller._state) {
@@ -156,20 +155,65 @@ const dataRequestHandler = (detail) => {
         }
 
         postResponse(newDetail)
+
+}
+
+const rawSongDataRequest = (detail) => {
+    let newDetail = {}
+
+    if (window.playerAPI != null && window.playerAPI._harmony._controller._state) {
+        let controller = window.playerAPI._harmony._controller;
+        newDetail.data = {
+            'current_track':controller._state.track_window.current_track,
+            'time': controller._progressPosition
+        }
     }
+
+    postResponse(newDetail)
+
+}
+
+const audioDataRequest = (detail) => {
+    let id = detail.id;
+    let responseData = spotifyController.getAudioAmplitudes();
+    postResponse({
+        'forward':true,
+        'id':id,
+        'data':responseData
+    });
 }
 
 const initializeConnectionChannel = () => {
     window.addEventListener('spotifyExtensionMessage', (e) => {
         if (e.detail.type == 'command') {
             commandHandler(e.detail)
-        } else if (e.detail.type == 'dataRequest') {
-            dataRequestHandler(e.detail)
+        } else if (e.detail.data == 'songData') {
+            songDataRequest(e.detail)
+        } else if(e.detail.type == 'audioDataRequest'){
+            audioDataRequest(e.detail);
         }
     });
-
-    return;
 }
+
+const postMessageAsync = async (type, data) => {
+    let newEvent = new CustomEvent('spotifyExtensionMessage', {
+        'detail':{
+            'type':type,
+            'data':data
+        }
+    });
+    let promise = new Promise((resolve) => {
+        window.addEventListener('spotifyExtensionMessageResponse', (e) => {
+            resolve(e.detail.data);
+        }, {once: true});
+    });
+    window.dispatchEvent(newEvent);
+    return promise;
+
+}
+
+window.postMessageAsync = postMessageAsync;
+
 
 try {
     patchPlayerElement();
