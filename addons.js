@@ -8,10 +8,13 @@ const attachLinks = () => {
             link.href = metadata.artwork[0].src;
         });
     }
+
+    console.log('triggered');
+
 }
 
 const setupAttachLinks = () => {
-    spotifyController.addEventListener('newsong', attachLinks);
+    spotifyController.addEvent('newsong', attachLinks);
 }
 
 const spotifyControllerCreated = () => {

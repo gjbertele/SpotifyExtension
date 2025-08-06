@@ -35,10 +35,10 @@ const checkSong = async () => {
     let data = await spotifyController.getSongData();
 
     if (data.songPlaying == false) return;
-
+    
     for(let i = 0; i<songList.length; i++){
         let song = songList[i];
-
+        
         if (song.title != data.title) continue;
         if (song.artist != data.artist && song.artist != '') continue;
 

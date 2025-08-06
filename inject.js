@@ -89,7 +89,6 @@ const createPlayerAPI = async () => {
 document.body.onload = createPlayerAPI;
 
 const playerAPICreated = () => {
-    window.playerAPI.getEvents().addListener('update', playerUpdated);
 
     spotifyController = new SpotifyController();
     spotifyController.setPlayerAPI(window.playerAPI);
@@ -97,6 +96,7 @@ const playerAPICreated = () => {
 
     window.spotifyController = spotifyController;
 
+    window.playerAPI.getEvents().addListener('update', playerUpdated);
     window.playerAPI.getEvents().addListener('update', spotifyController.playerUpdate);
 
     let newEvent = new CustomEvent('spotifyControllerCreated');

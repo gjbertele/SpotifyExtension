@@ -4,7 +4,7 @@ class SpotifyController {
     APIHandler;
     audioNodes;
     audioCtx;
-
+    #lastSongPlaying;
 
     #eventListeners = {};
 
@@ -58,15 +58,15 @@ class SpotifyController {
     }
 
     #getQueuePrivate = async () => {
-        return await playerAPI._queue._queueManager.getInternalPlayerQueue();
+        return await this.playerAPI._queue._queueManager.getInternalPlayerQueue();
     }
 
     getQueue = async () => {
         return (await this.#getQueuePrivate()).next_items;
     }
 
-    getCurrentSong = async () => {
-        return (await this.#getQueuePrivate()).current;
+    getCurrentSong = () => {
+        return this.playerAPI._queue.getQueue().current;
     }
 
     clearQueue = async () => {
@@ -87,7 +87,7 @@ class SpotifyController {
         return;
     }
 
-    addEventListener = (event, callback) => {
+    addEvent = (event, callback) => {
         if(!this.#eventListeners[event]) this.#eventListeners[event] = [];
 
         this.#eventListeners[event].push(callback);
@@ -97,20 +97,20 @@ class SpotifyController {
 
     #triggerEvent = (eventName, data) => {
         if(!this.#eventListeners[eventName]) return;
-        for(let i in this.#eventListeners[eventName]) this.#eventListeners[eventName](data);
+        for(let i in this.#eventListeners[eventName]) this.#eventListeners[eventName][i](data);
 
         return;
     }
 
     playerUpdate = (event) => {
         const item = event.data.item;
-
-        if(item.name != songPlaying.title || item.artists[0].name != songPlaying.artist) this.#triggerEvent('newsong', event.data);
-
+        if(!this.#lastSongPlaying || item.name != this.#lastSongPlaying.name) this.#triggerEvent('newsong', event.data);
+        if(!this.#lastSongPlaying) this.#lastSongPlaying = this.getCurrentSong();
         return;
     }
 
     #updatePlayerAPI = async () => {
         this.playerAPI = await window.getPlayerAPI();
+        this.#lastSongPlaying = this.getCurrentSong();
     }
 }
