@@ -14,7 +14,7 @@ const attachLinks = () => {
 }
 
 const setupAttachLinks = () => {
-    spotifyController.addEvent('newsong', attachLinks);
+    spotifyController.addEventListener('newsong', attachLinks);
 }
 
 const spotifyControllerCreated = () => {

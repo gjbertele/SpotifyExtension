@@ -87,7 +87,7 @@ class SpotifyController {
         return;
     }
 
-    addEvent = (event, callback) => {
+    addEventListener = (event, callback) => {
         if(!this.#eventListeners[event]) this.#eventListeners[event] = [];
 
         this.#eventListeners[event].push(callback);
