@@ -32,7 +32,10 @@ const setup = (data) => {
             chrome.tabs.sendMessage(
                 tabs[0].id,
                 {from: 'popup', subject: 'songUpdate', songData:newSongObject},
-                sentCallback);
+                (e) => {
+                    sentCallback(e);
+                    window.location.reload();
+                });
           });
 
     }
@@ -87,8 +90,12 @@ const generateSongElem = (song) => {
             chrome.tabs.sendMessage(
                 tabs[0].id,
                 {from: 'popup', subject: 'deleteSong', songData:song},
-                sentCallback);
+                (e) => {
+                    sentCallback(e);
+                    window.location.reload();
+                });
           });
+
       
     }
 

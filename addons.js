@@ -24,9 +24,9 @@ const checkSong = async () => {
 
         let songProgress = window.playerAPI._harmony._controller._progressPosition;
 
-        if(songProgress < song.skipTime*1000) continue;
-        if(currentSong.type == 'episode' && songProgress > 1000) spotifyController.seekForwards(-songProgress);
-        setTimeout(spotifyController.skip, 500);
+        if(songProgress < song.skipTime*1000 && songProgress > currentSong.duration.milliseconds - 1000) continue;
+        
+        spotifyController.seekForwards(currentSong.duration.milliseconds-songProgress - 1000);
 
     }
 }
