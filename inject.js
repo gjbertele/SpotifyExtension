@@ -9,6 +9,7 @@ const patchPlayerElement = () => {
             
             insertAudioContext(this);
         }
+        
         return originalPlay.apply(this, args);
     }
     

@@ -184,7 +184,7 @@ const drawSidebarCanvas = async () => {
     let data = [];
     for(let i in rawData) data.push(rawData[i]);
 
-    let blocks = 7;
+    let blocks = 60;
     let length = data.length;
     let blockedData = new Array(blocks);
     
@@ -195,22 +195,26 @@ const drawSidebarCanvas = async () => {
         blockedData[newIdx] += data[i];
     }
 
+    for(let i = 0; i<blocks; i++){
+        blockedData[i] = (blockedData[i]/(length/blocks))/256;
+        blockedData[i] = Math.abs(blockedData[i] - 0.5);
+        if(blockedData[i] > 1) blockedData[i] = 1;
+        blockedData[i] *= h*3/4;
+    }
+
+    let smoothedData = new Array(blocks);
+    let windowSize = 5;
+    for(let i = 0; i<blocks; i++){
+        smoothedData[i] = 0;
+        for(let j = Math.max(0,i-windowSize); j<=Math.min(i+windowSize,blocks-1); j++){
+            smoothedData[i] += blockedData[i]/(2*windowSize+1);
+        }
+    }
 
     sideCtx.fillStyle = '#1db954';
 
-    let arr = new Array(blocks);
-
     for(let i = 0; i<blocks; i++){
-        blockedData[i] /= length/blocks;
-
-        let transformedData = blockedData[i]*70/256;
-        if(transformedData < 0) transformedData = 0;
-        if(transformedData > 70) transformedData = 70;
-
-        arr[i] = transformedData;
-
-        let startingX = i*60/blocks;
-        sideCtx.fillRect(startingX, h-transformedData, 50/blocks, transformedData);
+        sideCtx.fillRect(i*w/blocks, h/2-smoothedData[i], (w-10)/blocks, smoothedData[i]*2);
 
     }
 
