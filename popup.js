@@ -187,16 +187,23 @@ const drawSidebarCanvas = async () => {
     let blocks = 60;
     let length = data.length;
     let blockedData = new Array(blocks);
-    
-    for(let i = 0; i<blocks; i++) blockedData[i] = 0;
+    let blockedCounts = new Array(blocks);
 
-    for(let i = 0; i<length; i++){
-        let newIdx = Math.floor(blocks*i/length);
+    for(let i = 0; i<blocks; i++){
+        blockedData[i] = 0;
+        blockedCounts[i] = 0;
+    }
+
+    let firstWindow = length;
+
+    for(let i = 0; i<firstWindow; i++){
+        let newIdx = Math.floor(blocks*i/firstWindow);
         blockedData[newIdx] += data[i];
+        blockedCounts[newIdx]++;
     }
 
     for(let i = 0; i<blocks; i++){
-        blockedData[i] = (blockedData[i]/(length/blocks))/256;
+        blockedData[i] = (blockedData[i]/blockedCounts[i])/256;
         blockedData[i] = Math.abs(blockedData[i] - 0.5);
         if(blockedData[i] > 1) blockedData[i] = 1;
         blockedData[i] *= h*3/4;

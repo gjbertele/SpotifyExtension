@@ -81,12 +81,13 @@ const setup = async () => {
             });
             window.dispatchEvent(customEvent);
         }
-    })
+    });
 
     chrome.runtime.onMessage.addListener(async (msg, sender, response) => {
         if(msg.from != 'popup') return;
         if(msg.forward === true){
-            let forwardedResponse = await postMessageToInjectedAsync('audioDataRequest'); 
+            let forwardedResponse = await postMessageToInjectedAsync(msg.subject); 
+
             response({
                 'data':forwardedResponse.data
             });

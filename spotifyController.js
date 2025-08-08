@@ -5,6 +5,7 @@ class SpotifyController {
     audioNodes;
     audioCtx;
     #lastSongPlaying;
+    broadcastChannel;
 
     #eventListeners = {};
 
@@ -47,15 +48,22 @@ class SpotifyController {
         return;
     }
 
-    getAudioAmplitudes = () => {
-        if(!this.audioNodes) return null;
-        const analyzerNode = this.audioNodes['analyzerNode'];
+    getAudioAmplitudes = async () => {
+        if(!this.audioNodes){
+            return await this.#broadcastAsync({
+                'type':'dataRequest',
+                'data':'audioAmplitudes'
+            });
+        } else {
+            const analyzerNode = this.audioNodes['analyzerNode'];
 
-        const dataArray = new Uint8Array(analyzerNode.frequencyBinCount);
-        analyzerNode.getByteTimeDomainData(dataArray);
+            const dataArray = new Uint8Array(analyzerNode.frequencyBinCount);
+            analyzerNode.getByteTimeDomainData(dataArray);
 
-        return dataArray;
+            return dataArray;
+        }
     }
+
 
     #getQueuePrivate = async () => {
         return await this.playerAPI._queue._queueManager.getInternalPlayerQueue();
@@ -114,5 +122,62 @@ class SpotifyController {
     #updatePlayerAPI = async () => {
         this.playerAPI = await window.getPlayerAPI();
         this.#lastSongPlaying = this.getCurrentSong();
+
+        return;
+    }
+
+
+    #initializeBroadcastHandler = () => {
+        this.broadcastChannel = new BroadcastChannel('spotifyExtensionBroadcast');
+
+        this.broadcastChannel.addEventListener('message', (e) => {
+            const msg = e.data;
+
+            if(msg.data.type == 'dataRequest') this.#dataRequestHandler(msg);
+        });
+
+        return;
+    }
+
+    #dataRequestHandler = async (msg) => {
+        if(msg.data.data == 'audioAmplitudes'){
+            if(!this.audioNodes) return;
+            let responseData = await this.getAudioAmplitudes();
+            this.#broadcastResponse(responseData, msg.id);
+        }
+
+        return;
+    }
+
+    initialize = () => {
+        this.#initializeBroadcastHandler();
+
+        return;
+    }
+
+    #broadcastResponse = (data, id) => {
+        this.broadcastChannel.postMessage({
+            'data': data,
+            'id': id
+        });
+
+        return;
+    }
+
+    #broadcastAsync = async (data) => {
+        let id = Math.random();
+
+        this.broadcastChannel.postMessage({
+            'data':data,
+            'id':id
+        });
+
+        return new Promise((resolve) => {
+            this.broadcastChannel.addEventListener('message', (e) => {
+                let msg = e.data;
+                if(msg.id != id) return;
+                resolve(msg.data);
+            });
+        });
     }
 }

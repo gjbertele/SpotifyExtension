@@ -1,4 +1,5 @@
-let APIList, spotifyController, APIHandler, onPlayerLoad = [];
+let APIList, spotifyController, APIHandler, songPlaying = {};
+
 
 const patchPlayerElement = () => {
     const originalPlay = HTMLMediaElement.prototype.play;
@@ -9,7 +10,7 @@ const patchPlayerElement = () => {
             
             insertAudioContext(this);
         }
-        
+
         return originalPlay.apply(this, args);
     }
     
@@ -94,6 +95,7 @@ const playerAPICreated = () => {
     spotifyController = new SpotifyController();
     spotifyController.setPlayerAPI(window.playerAPI);
     spotifyController.setAPIHandler(APIHandler);
+    spotifyController.initialize();
 
     window.spotifyController = spotifyController;
 
@@ -103,18 +105,29 @@ const playerAPICreated = () => {
     let newEvent = new CustomEvent('spotifyControllerCreated');
     window.dispatchEvent(newEvent);
     
+    return;
 }
 
-const songPlaying = {};
+const fireMainAppLoad = () => {
+    let event = new CustomEvent('mainAppLoaded');
+    window.dispatchEvent(event);
+
+    return;
+}
 
 const playerUpdated = (e) => {
     if(e.data.item.name == songPlaying.title && e.data.item.artists[0].name == songPlaying.artist) return;
+
+    if(!songPlaying.title) fireMainAppLoad();
+
     songPlaying.title = e.data.item.name;
     songPlaying.artist = e.data.item.artists[0].name;
     postAlert({
         'type':'newSong',
         'songData': songPlaying
     });
+
+    return;
 }
 
 const commandHandler = (detail) => {
@@ -125,6 +138,8 @@ const commandHandler = (detail) => {
     } else if (spotifyController[detail.data]) {
         spotifyController[detail.data]();
     }
+
+    return;
 }
 
 const postResponse = (data) => {
@@ -133,6 +148,8 @@ const postResponse = (data) => {
     });
 
     window.dispatchEvent(newEvent);
+
+    return;
 }
 
 const postAlert = (data) => {
@@ -141,6 +158,8 @@ const postAlert = (data) => {
     });
 
     window.dispatchEvent(newEvent);
+
+    return;
 }
 
 const songDataRequest = (detail) => {
@@ -151,16 +170,20 @@ const songDataRequest = (detail) => {
             newDetail.data = {
                 'title': controller._state.track_window.current_track.name,
                 'artist': controller._state.track_window.current_track.artists[0].name,
-                'time': controller._progressPosition
+                'time': controller._progressPosition,
+                'id':detail.id
             }
         }
 
         postResponse(newDetail)
 
+        return;
 }
 
 const rawSongDataRequest = (detail) => {
-    let newDetail = {}
+    let newDetail = {
+        'id':detail.id
+    }
 
     if (window.playerAPI != null && window.playerAPI._harmony._controller._state) {
         let controller = window.playerAPI._harmony._controller;
@@ -170,18 +193,23 @@ const rawSongDataRequest = (detail) => {
         }
     }
 
-    postResponse(newDetail)
+    postResponse(newDetail);
+
+    return;
 
 }
 
-const audioDataRequest = (detail) => {
+const audioDataRequest = async (detail) => {
     let id = detail.id;
-    let responseData = spotifyController.getAudioAmplitudes();
+    let responseData = await spotifyController.getAudioAmplitudes();
+    
     postResponse({
         'forward':true,
         'id':id,
         'data':responseData
     });
+
+    return;
 }
 
 const initializeConnectionChannel = () => {
@@ -194,19 +222,25 @@ const initializeConnectionChannel = () => {
             audioDataRequest(e.detail);
         }
     });
+
+    return;
 }
 
 const postMessageAsync = async (type, data) => {
+    let id = Math.random();
     let newEvent = new CustomEvent('spotifyExtensionMessage', {
         'detail':{
             'type':type,
-            'data':data
+            'data':data,
+            'id':id
         }
     });
     let promise = new Promise((resolve) => {
         window.addEventListener('spotifyExtensionMessageResponse', (e) => {
+            if(e.detail.id != id) return;
+            window.removeEventListener('spotifyExtensionMessageResponse', this);
             resolve(e.detail.data);
-        }, {once: true});
+        });
     });
     window.dispatchEvent(newEvent);
     return promise;
