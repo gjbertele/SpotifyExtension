@@ -1,6 +1,7 @@
 let songList = [];
 let lastSkippedTime = Date.now();
 let messagingHandler = new window.contentMessagingHandler();
+messagingHandler.initialize();
 
 const spotifyController = new Spotify();
 
@@ -87,14 +88,6 @@ const setup = async () => {
 
     messagingHandler.addRuntimeListener(async (msg, response) => {
         if(msg.from != 'popup') return;
-        if(msg.forward === true){
-            let forwardedResponse = await messagingHandler.postMessageToInjectedAsync(msg.subject); 
-
-            response({
-                'data':forwardedResponse.data
-            });
-            return;
-        }
         if (msg.subject === 'songInfo') {
             response({
                 songs: songList

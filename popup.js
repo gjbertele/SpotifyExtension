@@ -92,8 +92,6 @@ const addListeners = () => {
         let str = val;
         if(val >= 0) str = "+"+val;
         document.querySelector('.bassText').textContent = `Bass (${str}db)`;
-        console.log('update to ',val);
-
 
         messagingHandler.postTabMessage({
             'subject':'bassUpdate',
@@ -131,8 +129,7 @@ const drawSidebarCanvas = async () => {
     let w = sideCanvas.width;
     let h = sideCanvas.height;
 
-    let rawData = await messaingHandler.postMessageToInjectedAsync('audioDataRequest');
-
+    let rawData = await messagingHandler.postMessageToInjectedAsync('audioDataRequest');
 
     sideCtx.clearRect(0,0,w,h);
     

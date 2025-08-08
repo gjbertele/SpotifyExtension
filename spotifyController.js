@@ -62,10 +62,11 @@ class SpotifyController {
 
             return dataArray;
         } else {
-            return await this.messagingHandler.broadcastAsync({
+            let awaitedData = await this.messagingHandler.broadcastAsync({
                 'type':'dataRequest',
                 'data':'audioAmplitudes'
             });
+            return awaitedData;
         }
     }
 
@@ -135,6 +136,7 @@ class SpotifyController {
         if(msg.data.data == 'audioAmplitudes'){
             if(!this.audioNodes) return;
             let responseData = await this.getAudioAmplitudes();
+
             messagingHandler.broadcastResponse(responseData, msg.id);
         }
 

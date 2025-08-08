@@ -1,0 +1,20 @@
+patch tracklist-row element creation to insert custom buttons
+patch UI creation so I don't have to reprogram everything
+slider for time input?
+only save track uid + time for better comparison
+-> need to extract classes for search, in 31323 under 'v'
+
+in 26387.A, classes for parts
+
+Menu class as injected script
+addButton(name, onclick?)
+getHTML()
+
+menu
+    > menuitem
+        > menu item button
+        > or menu item static
+    > dividerBefore used more
+
+
+COULD ALSO PATCH INTO CONTEXT MENU

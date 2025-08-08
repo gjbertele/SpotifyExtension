@@ -7,12 +7,14 @@ class MessageHandler {
                 'id':id
             }
         });
+
         return new Promise((resolve) => {
-            const temp = (e) => {
+            window.addEventListener('spotifyExtensionMessageResponse',(e) => {
                 if(e.detail.id != id) return;
+
+                window.removeEventListener('spotifyExtensionMessageResponse', this);
                 resolve(e.detail);
-            }
-            window.addEventListener('spotifyExtensionMessageResponse',temp);
+            });
             window.dispatchEvent(customEvent);
         });
     
@@ -26,10 +28,33 @@ class MessageHandler {
         window.addEventListener('spotifyExtensionMessage', callback);
     }
 
-    addRuntimeListener = (callback) => {
-        chrome.runtime.onMessage.addListener((message, sender, response) => {
-            callback(message, response);
+    addRuntimeListener = (callback, overrideForward = false) => {
+        chrome.runtime.onMessage.addListener((msg, sender, response) => {
+            if(msg.from != 'popup') return;
+            if(msg.forward == overrideForward || (!msg.forward && !overrideForward)) callback(msg, response);
         });
+    }
+
+    sendRuntimeMessage = async (data) => {
+        chrome.runtime.sendMessage({
+                from: 'content',
+                ...data
+            });
+    }
+
+    initialize = () => {
+        this.addRuntimeListener(async (msg, response) => {
+            if(msg.forward === true){
+                let forwardedResponse = await messagingHandler.postMessageToInjectedAsync(msg.subject); 
+
+                this.sendRuntimeMessage({
+                    id:msg.id,
+                    data:forwardedResponse.data
+                });
+            }
+
+            return;
+        }, true);
     }
 }
 

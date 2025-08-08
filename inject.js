@@ -157,11 +157,27 @@ const songDataRequest = (detail) => {
             }
         }
 
-        messaingHandler.postResponse(newDetail)
+        messagingHandler.postResponse(newDetail)
 
         return;
 }
 
+
+window.addEventListener('spotifyExtensionMessage', async (e) => {
+    if (e.detail.type == 'command') {
+        commandHandler(e.detail)
+    } else if (e.detail.data == 'songData') {
+        songDataRequest(e.detail)
+    } else if (e.detail.type == 'audioDataRequest') {
+        let responseData = Array.from(await spotifyController.getAudioAmplitudes());
+
+        messagingHandler.postResponse({
+            'forward': true,
+            'id': e.detail.id,
+            'data': responseData
+        });
+    }
+});
 
 try {
     messagingHandler = new MessagingHandler();

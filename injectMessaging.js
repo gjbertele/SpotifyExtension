@@ -1,4 +1,6 @@
 class MessagingHandler {
+    broadcastChannel;
+
     postResponse = (data) => {
         let newEvent = new CustomEvent('spotifyExtensionMessageResponse', {
             'detail': data
@@ -20,21 +22,6 @@ class MessagingHandler {
     }
 
     initializeConnectionChannel = async () => {
-        window.addEventListener('spotifyExtensionMessage', async (e) => {
-            if (e.detail.type == 'command') {
-                commandHandler(e.detail)
-            } else if (e.detail.data == 'songData') {
-                songDataRequest(e.detail)
-            } else if (e.detail.type == 'audioDataRequest') {
-                let responseData = await spotifyController.getAudioAmplitudes();
-                this.postResponse({
-                    'forward': true,
-                    'id': e.detail.id,
-                    'data': responseData
-                });
-            }
-        });
-
         window.postMessageAsync = this.postMessageAsync;
 
         return;
@@ -49,30 +36,34 @@ class MessagingHandler {
                 'id': id
             }
         });
-        let promise = new Promise((resolve) => {
+        return new Promise((resolve) => {
             window.addEventListener('spotifyExtensionMessageResponse', (e) => {
                 if (e.detail.id != id) return;
                 window.removeEventListener('spotifyExtensionMessageResponse', this);
                 resolve(e.detail.data);
             });
-        });
 
-        window.dispatchEvent(newEvent);
-        return promise;
+            window.dispatchEvent(newEvent);
+        });
 
     }
 
     initializeBroadcastHandler = () => {
+        if(this.broadcastChannel) return;
+
         this.broadcastChannel = new BroadcastChannel('spotifyExtensionBroadcast');
 
         return;
     }
 
     addBroadcastEventListener(callback){
+        if(!this.broadcastChannel) this.initializeBroadcastHandler();
         this.broadcastChannel.addEventListener('message', callback);
     }
 
     broadcastResponse = (data, id) => {
+        if(!this.broadcastChannel) this.initializeBroadcastHandler();
+
         this.broadcastChannel.postMessage({
             'data': data,
             'id': id
@@ -82,6 +73,8 @@ class MessagingHandler {
     }
 
     broadcastAsync = async (data) => {
+        if(!this.broadcastChannel) this.initializeBroadcastHandler();
+
         let id = Math.random();
 
         this.broadcastChannel.postMessage({
@@ -93,6 +86,7 @@ class MessagingHandler {
             this.broadcastChannel.addEventListener('message', (e) => {
                 let msg = e.data;
                 if(msg.id != id) return;
+                this.broadcastChannel.removeEventListener(this);
                 resolve(msg.data);
             });
         });
