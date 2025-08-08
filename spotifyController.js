@@ -83,12 +83,12 @@ class SpotifyController {
         return sum*2/dataArray.length;
     }
 
-    #getQueuePrivate = async () => {
+    getQueuePrivate = async () => {
         return await this.playerAPI._queue._queueManager.getInternalPlayerQueue();
     }
 
     getQueue = async () => {
-        return (await this.#getQueuePrivate()).next_items;
+        return (await this.getQueuePrivate()).next_items;
     }
 
     getCurrentSong = () => {

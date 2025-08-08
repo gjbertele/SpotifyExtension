@@ -1,23 +1,7 @@
-patch tracklist-row element creation to insert custom buttons
-patch UI creation so I don't have to reprogram everything
-slider for time input?
-only save track uid + time for better comparison
--> need to extract classes for search, in 31323 under 'v'
+find use for menu class
 
-in 26387.A, classes for parts
+fix element getting when not on personally owned playlist
 
-Menu class as injected script
-addButton(name, onclick?)
-getHTML()
+add check for rewriting album if playing song not from it
 
-menu
-    > menuitem
-        > menu item button
-        > or menu item static
-    > dividerBefore used more
-
-
-COULD ALSO PATCH INTO CONTEXT MENU
-
-
-to get track uid from menu, go to album button contains it in url
+return to default if no longer playing song

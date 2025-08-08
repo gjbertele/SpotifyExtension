@@ -113,9 +113,22 @@ let playlistHeader = {
     'albumColor': null
 }
 
+const allowedToPatchPlaylist = async () => {
+    if(window.location.href.includes('playlist')) return true;
+    if(!window.location.href.includes('album')) return false;
+    let currentTrack = (await spotifyController.getQueuePrivate()).current_track;
 
-const patchPlaylistHeader = () => {
-    if (!window.location.href.includes('playlist') && !window.location.href.includes('album')) return;
+    if(!currentTrack.metadata?.entity_uri) return false;
+
+    let songURI = currentTrack.metadata.entity_uri.split(':')[2];
+    let albumURI = window.location.href.split('/');
+    albumURI = albumURI[albumURI.length - 1];
+
+    return songURI == albumURI;
+}
+
+const patchPlaylistHeader = async () => {
+    if (!(await allowedToPatchPlaylist())) return;
 
     let mainContainer = document.querySelector('.main-view-container__scroll-node-child > main > section');
     if (!mainContainer) {
@@ -126,37 +139,45 @@ const patchPlaylistHeader = () => {
     console.log('patched');
 
     let headerContainer = mainContainer.childNodes[0];
-    let playlistContainer = mainContainer.childNodes[1];
-    let contentBox = headerContainer.querySelector('.contentSpacing');
+    let playlistContainer;
+    mainContainer.childNodes.forEach((child) => {
+        if(playlistContainer) return;
+        if(child.style.getPropertyValue('--background-base-70') != ''){
+            playlistContainer = child;
+            return;
+        }
+        if(child.firstChild?.style.getPropertyValue('--background-base-70') != ''){
+            playlistContainer = child.firstChild;
+            return;
+        }
+    });
 
-    let titleArea = contentBox.childNodes[2];
+    let titleArea = document.querySelector('[data-testid="entityTitle"]').parentElement;
 
     headerContainer.firstChild.style.setProperty('--background-base', '#121212FF');
     headerContainer.firstChild.style.setProperty('--background-base-min-contrast', '#121212FF');
 
-    playlistContainer.firstChild.style.setProperty('--background-base-70', '#121212FF');
+    playlistContainer.style.setProperty('--background-base-70', '#121212FF');
 
-    titleArea.childNodes[0].remove();
     titleArea.querySelector('figure').remove();
 
-    let clonedChild = titleArea.childNodes[1].childNodes[0].cloneNode(true);
+    let artistBar = titleArea.querySelector('[data-testid="creator-link"]').parentElement.parentElement;
+    let clonedChild = artistBar.cloneNode(true);
     let artistArea = clonedChild.querySelector('a');
 
     clonedChild.classList.remove(clonedChild.classList[0]);
 
+    titleArea.querySelector('h1').style.overflow = 'visible';
+    titleArea.querySelector('h1').style.overflowX = 'visible';
 
-    titleArea.querySelector('button').style.width = '30%';
-    titleArea.childNodes[1].childNodes.forEach((child) => child.style.display = 'none');
-    titleArea.childNodes[1].appendChild(clonedChild);
+    titleArea.querySelector('[data-testid="entityTitle"]').style.width = '30%'; 
+    artistBar.parentElement.childNodes.forEach((child) => child.style.display = 'none');
+    artistBar.parentElement.appendChild(clonedChild);
 
-    const playlistImage = document.querySelector('[data-testid="playlist-image"]');
-    playlistHeader.imgElement = playlistImage.querySelector('[draggable="false"] > img');
+    setImgElement();
 
     spotifyController.addEventListener('newsong', updatePlaylistHeader);
 
-    setInterval(() => {
-        document.querySelector('[aria-label="Hide Now Playing view"]')?.click();
-    }, 500);
 
     playlistHeader.titleArea = titleArea;
     playlistHeader.artistArea = artistArea;
@@ -166,7 +187,13 @@ const patchPlaylistHeader = () => {
     updatePlaylistHeader();
 }
 
+const setImgElement = () => {
+    playlistHeader.imgElement = Array.from(document.querySelectorAll('[sizes]')).filter((i) => i.loading == 'lazy' || i.loading == 'eager')[0];
+}
+
 const createVisualizerCanvas = () => {
+    if(playlistHeader.imgElement == null || playlistHeader.imgElement == undefined) setImgElement();
+
     let titleArea = playlistHeader.titleArea;
 
     let canvas = document.createElement('canvas');
@@ -248,10 +275,12 @@ const updatePlaylistHeader = async () => {
     }
 
 
-    if (songTitle) playlistHeader.titleArea.childNodes[0].querySelector('h1').textContent = songTitle;
+    if (songTitle) playlistHeader.titleArea.querySelector('h1').textContent = songTitle;
 
     playlistHeader.artistArea.textContent = currentArtistName;
     playlistHeader.artistArea.href = 'https://open.spotify.com/artist/' + artistUID;
+
+    setImgElement();
 
     if (imageSrc) {
         playlistHeader.imgElement.removeAttribute('srcset');
@@ -319,6 +348,9 @@ const spotifyControllerCreated = () => {
 }
 const mainAppLoaded = () => {
     setupBassBar();
+    setInterval(() => {
+        document.querySelector('[aria-label="Hide Now Playing view"]')?.click();
+    });
     patchPlaylistHeader();
 }
 
