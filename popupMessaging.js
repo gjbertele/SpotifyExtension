@@ -1,6 +1,6 @@
 class MessagingHandler {
     postMessageToInjectedAsync = async (type) => {
-        return new Promise(async (resolve) => {
+        const fastPromise = new Promise(async (resolve) => {
             const [tab] = await chrome.tabs.query({
                 active: true,
                 currentWindow: true
@@ -25,6 +25,16 @@ class MessagingHandler {
                     id:responseID
                 });
         });
+
+        return Promise.race([fastPromise, this.#generateRace(200)]);
+    }
+    
+    #generateRace = (ms) => {
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                reject('Timeout');
+            }, ms);
+        });
     }
 
     postTabMessage = async (data, callback) => {
@@ -39,5 +49,7 @@ class MessagingHandler {
                     ...data
                 },
                 callback);
+
+        return;
     }
 }

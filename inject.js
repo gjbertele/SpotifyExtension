@@ -179,12 +179,22 @@ window.addEventListener('spotifyExtensionMessage', async (e) => {
     }
 });
 
+const createMessagingHandler = () => {
+    try {
+        messagingHandler = new MessagingHandler();
+        messagingHandler.initializeConnectionChannel();
+        console.log('Created handler');
+    } catch (err){
+        console.log(err);
+        setTimeout(createMessagingHandler,10);
+    }
+}
+
 try {
-    messagingHandler = new MessagingHandler();
 
     patchPlayerElement();
     initializeWebpackAccess();
-    messagingHandler.initializeConnectionChannel();
+    createMessagingHandler();
 } catch(err){
     console.log(err);
 }

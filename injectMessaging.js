@@ -72,6 +72,15 @@ class MessagingHandler {
         return;
     }
 
+    
+    #generateRace = (ms) => {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve('Timeout');
+            }, ms);
+        });
+    }
+    
     broadcastAsync = async (data) => {
         if(!this.broadcastChannel) this.initializeBroadcastHandler();
 
@@ -82,7 +91,7 @@ class MessagingHandler {
             'id':id
         });
 
-        return new Promise((resolve) => {
+        const promise = new Promise((resolve) => {
             this.broadcastChannel.addEventListener('message', (e) => {
                 let msg = e.data;
                 if(msg.id != id) return;
@@ -90,5 +99,7 @@ class MessagingHandler {
                 resolve(msg.data);
             });
         });
+
+        return Promise.race([promise, this.#generateRace(1000)]);
     }
 }

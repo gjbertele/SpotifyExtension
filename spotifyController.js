@@ -70,6 +70,18 @@ class SpotifyController {
         }
     }
 
+    getComputedVolume = () => {
+        if(!this.audioNodes) return;
+        const analyzerNode = this.audioNodes['analyzerNode'];
+
+        const dataArray = new Uint8Array(analyzerNode.frequencyBinCount);
+        analyzerNode.getByteFrequencyData(dataArray);
+
+        let sum = 0;
+        for(let i = 0; i<dataArray.length/2; i++) sum += dataArray[i]/255;
+
+        return sum*2/dataArray.length;
+    }
 
     #getQueuePrivate = async () => {
         return await this.playerAPI._queue._queueManager.getInternalPlayerQueue();
@@ -136,7 +148,7 @@ class SpotifyController {
         if(msg.data.data == 'audioAmplitudes'){
             if(!this.audioNodes) return;
             let responseData = await this.getAudioAmplitudes();
-
+            
             messagingHandler.broadcastResponse(responseData, msg.id);
         }
 

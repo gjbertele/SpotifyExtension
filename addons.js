@@ -1,4 +1,7 @@
-let mouse = {x:0,y:0};
+let mouse = {
+    x: 0,
+    y: 0
+};
 let bassBarMouseDown = false;
 let volumeBar, bassBar, progressBar, bassDiff = 0;
 
@@ -18,21 +21,21 @@ const attachLinks = () => {
 }
 
 const checkSong = async () => {
-    let songList = await postMessageAsync('songListRequest',null);
+    let songList = await postMessageAsync('songListRequest', null);
     let currentSong = spotifyController.getCurrentSong();
-    
-    if(currentSong == undefined) return;
 
-    for(let i in songList){
+    if (currentSong == undefined) return;
+
+    for (let i in songList) {
         let song = songList[i];
-        if(song.title != currentSong.name) continue;
-        if(currentSong.artists[0] && song.artist != currentSong.artists[0].name && song.artist != '') continue;
+        if (song.title != currentSong.name) continue;
+        if (currentSong.artists[0] && song.artist != currentSong.artists[0].name && song.artist != '') continue;
 
         let songProgress = window.playerAPI._harmony._controller._progressPosition;
 
-        if(songProgress < song.skipTime*1000 && songProgress > currentSong.duration.milliseconds - 1000) continue;
-        
-        spotifyController.seekForwards(currentSong.duration.milliseconds-songProgress - 1000);
+        if (songProgress < song.skipTime * 1000 && songProgress > currentSong.duration.milliseconds - 1000) continue;
+
+        spotifyController.seekForwards(currentSong.duration.milliseconds - songProgress - 1000);
 
     }
 }
@@ -52,24 +55,24 @@ const setupBassBar = () => {
 
     const iconElement = bassBar.querySelector('svg');
 
-    if(volumeBar == undefined){
+    if (volumeBar == undefined) {
         setTimeout(setupBassBar, 1000);
         return;
     }
 
-    volumeBar.parentElement.insertBefore(bassBar,volumeBar.nextSibling);
+    volumeBar.parentElement.insertBefore(bassBar, volumeBar.nextSibling);
 
-    iconElement.querySelector('path').setAttribute('d',lightningSVGString); 
+    iconElement.querySelector('path').setAttribute('d', lightningSVGString);
     iconElement.style.transform = 'scale(1.5)';
 
-    progressBar.style.setProperty('--is-active-fg-color','#B9541D');
+    progressBar.style.setProperty('--is-active-fg-color', '#B9541D');
 
     progressBar.onmousedown = () => {
         bassBarMouseDown = true;
     }
 
     document.documentElement.onmouseup = () => {
-        if(bassBarMouseDown) finalizeBassBarValue();
+        if (bassBarMouseDown) finalizeBassBarValue();
         bassBarMouseDown = false;
     }
 
@@ -79,14 +82,14 @@ const setupBassBar = () => {
 }
 
 const checkProgressBarUpdate = () => {
-    if(bassBarMouseDown == true){
+    if (bassBarMouseDown == true) {
         let rect = progressBar.getBoundingClientRect();
 
-        let transformedX = (mouse.x - rect.left)/rect.width;
-        if(transformedX < 0) transformedX = 0;
-        if(transformedX > 1) transformedX = 1;
+        let transformedX = (mouse.x - rect.left) / rect.width;
+        if (transformedX < 0) transformedX = 0;
+        if (transformedX > 1) transformedX = 1;
 
-        if(Math.abs(transformedX - 0.5) < 0.05) transformedX = 0.5;
+        if (Math.abs(transformedX - 0.5) < 0.05) transformedX = 0.5;
 
         setBassBarValue(transformedX);
     }
@@ -98,9 +101,211 @@ const finalizeBassBarValue = () => {
 }
 
 const setBassBarValue = (value) => {
-    progressBar.style.setProperty('--progress-bar-transform',(value*100)+'%');
-    bassDiff = value*20 - 10;
+    progressBar.style.setProperty('--progress-bar-transform', (value * 100) + '%');
+    bassDiff = value * 20 - 10;
 }
+
+let playlistHeader = {
+    'titleArea': null,
+    'imgElement': null,
+    'artistArea': null,
+    'canvas': null,
+    'albumColor': null
+}
+
+
+const patchPlaylistHeader = () => {
+    if (!window.location.href.includes('playlist') && !window.location.href.includes('album')) return;
+
+    let mainContainer = document.querySelector('.main-view-container__scroll-node-child > main > section');
+    if (!mainContainer) {
+        setTimeout(patchPlaylistHeader, 1000);
+        return;
+    }
+
+    console.log('patched');
+
+    let headerContainer = mainContainer.childNodes[0];
+    let playlistContainer = mainContainer.childNodes[1];
+    let contentBox = headerContainer.querySelector('.contentSpacing');
+
+    let titleArea = contentBox.childNodes[2];
+
+    headerContainer.firstChild.style.setProperty('--background-base', '#121212FF');
+    headerContainer.firstChild.style.setProperty('--background-base-min-contrast', '#121212FF');
+
+    playlistContainer.firstChild.style.setProperty('--background-base-70', '#121212FF');
+
+    titleArea.childNodes[0].remove();
+    titleArea.querySelector('figure').remove();
+
+    let clonedChild = titleArea.childNodes[1].childNodes[0].cloneNode(true);
+    let artistArea = clonedChild.querySelector('a');
+
+    clonedChild.classList.remove(clonedChild.classList[0]);
+
+
+    titleArea.querySelector('button').style.width = '30%';
+    titleArea.childNodes[1].childNodes.forEach((child) => child.style.display = 'none');
+    titleArea.childNodes[1].appendChild(clonedChild);
+
+    const playlistImage = document.querySelector('[data-testid="playlist-image"]');
+    playlistHeader.imgElement = playlistImage.querySelector('[draggable="false"] > img');
+
+    spotifyController.addEventListener('newsong', updatePlaylistHeader);
+
+    setInterval(() => {
+        document.querySelector('[aria-label="Hide Now Playing view"]')?.click();
+    }, 500);
+
+    playlistHeader.titleArea = titleArea;
+    playlistHeader.artistArea = artistArea;
+
+    createVisualizerCanvas();
+
+    updatePlaylistHeader();
+}
+
+const createVisualizerCanvas = () => {
+    let titleArea = playlistHeader.titleArea;
+
+    let canvas = document.createElement('canvas');
+    let imgRect = playlistHeader.imgElement.getBoundingClientRect();
+
+    canvas.width = 0.4 * (document.body.clientWidth - imgRect.width - imgRect.x);
+    canvas.height = 0;
+
+    canvas.style.width = canvas.width + 'px';
+
+    titleArea.appendChild(canvas);
+
+    playlistHeader.canvas = canvas;
+    playlistHeader.ctx = canvas.getContext('2d');
+
+    visualizerDraw();
+}
+
+const visualizerDraw = async () => {
+    let ctx = playlistHeader.ctx;
+    let h = playlistHeader.canvas.height;
+    let w = playlistHeader.canvas.width;
+
+    let rawData = await spotifyController.getAudioAmplitudes();
+
+    if(rawData == 'Timeout'){
+        requestAnimationFrame(visualizerDraw);
+        return;
+    }
+
+    let data = [];
+    for (let i in rawData) data.push(rawData[i]);
+
+    let length = data.length;
+
+    for (let i = 0; i < length; i++) {
+        data[i] = data[i] / 256;
+        data[i] = Math.abs(data[i] - 0.5);
+        if (data[i] > 1) data[i] = 1;
+        data[i] *= h * 3 / 4;
+    }
+
+    let smoothedData = new Array(length);
+    let windowSize = 5;
+    for (let i = 0; i < length; i++) {
+        smoothedData[i] = 0;
+        for (let j = Math.max(0, i - windowSize); j <= Math.min(i + windowSize, length - 1); j++) {
+            smoothedData[i] += data[i] / (2 * windowSize + 1);
+        }
+    }
+
+    ctx.fillStyle = playlistHeader.albumColor ? rgbToHex(...playlistHeader.albumColor) : '#1db954';
+    ctx.clearRect(0, 0, w, h);
+
+    for (let i = 0; i < length; i++) {
+        ctx.fillRect(i * w / length, h / 2 - smoothedData[i], (w - 10) / length, smoothedData[i] * 2);
+    }
+
+    requestAnimationFrame(visualizerDraw);
+}
+
+const rgbToHex = (r, g, b) => {
+    function componentToHex(c) {
+      const hex = c.toString(16);
+      return hex.length === 1 ? "0" + hex : hex;
+    }
+    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+}
+
+const updatePlaylistHeader = async () => {
+    let currentSong = spotifyController.getCurrentSong();
+    let songTitle, artistUID, currentArtistName, imageSrc;
+
+    if (currentSong) {
+        songTitle = currentSong.name;
+        currentArtistName = currentSong.artists[0].name;
+        artistUID = currentSong.artists[0].uri.split(':')[2];
+        imageSrc = currentSong.images[2].url;
+    }
+
+
+    if (songTitle) playlistHeader.titleArea.childNodes[0].querySelector('h1').textContent = songTitle;
+
+    playlistHeader.artistArea.textContent = currentArtistName;
+    playlistHeader.artistArea.href = 'https://open.spotify.com/artist/' + artistUID;
+
+    if (imageSrc) {
+        playlistHeader.imgElement.removeAttribute('srcset');
+        playlistHeader.imgElement.setAttribute('src', imageSrc);
+        playlistHeader.albumColor = await getAverageColor(imageSrc);
+    }
+
+    playlistHeader.canvas.height = 0;
+    playlistHeader.canvas.style.height = '0px';
+
+    setTimeout(() => {
+        let titleRect = playlistHeader.titleArea.querySelector('h1').getBoundingClientRect();
+        let imgRect = playlistHeader.imgElement.getBoundingClientRect();
+
+        let diff = titleRect.y - imgRect.y;
+        let targetDiff = 0;
+
+        let newHeight = diff - targetDiff;
+        playlistHeader.canvas.height = Math.min(Math.max(newHeight, imgRect.height / 5), imgRect.height/3);
+        playlistHeader.canvas.style.height = playlistHeader.canvas.height + 'px';
+    }, 50);
+
+}
+
+const getAverageColor = async (url) => {
+    const tempCanvas = document.createElement('canvas');
+    const ctx = tempCanvas.getContext('2d');
+    tempCanvas.width = 640;
+    tempCanvas.height = 640;
+    return new Promise((resolve) => {
+            var img = new Image;
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0);
+                const data = ctx.getImageData(0, 0, 640, 640).data;
+                let averageR = 0;
+                let averageG = 0;
+                let averageB = 0;
+                let count = 0;
+                for (let i = 0; i < data.length; i += 4) {
+                    averageR += data[i];
+                    averageG += data[i + 1];
+                    averageB += data[i + 2];
+                    count++;
+                }
+                averageR /= count;
+                averageG /= count;
+                averageB /= count;
+                resolve([parseInt(averageR), parseInt(averageG), parseInt(averageB)]);
+
+        }
+        img.src = url;
+    });
+}
+
 
 document.body.onmousemove = (e) => {
     mouse.x = e.clientX;
@@ -112,10 +317,10 @@ const spotifyControllerCreated = () => {
     setupAttachLinks();
     setupCheckSong();
 }
-
 const mainAppLoaded = () => {
     setupBassBar();
+    patchPlaylistHeader();
 }
 
-window.addEventListener('spotifyControllerCreated',spotifyControllerCreated);
+window.addEventListener('spotifyControllerCreated', spotifyControllerCreated);
 window.addEventListener('mainAppLoaded', mainAppLoaded)

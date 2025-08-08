@@ -28,9 +28,11 @@
                 "inject.js",
                 "spotifyController.js",
                 "addons.js",
-                "injectMessaging.js"
+                "injectMessaging.js",
+                "menu.js"
             ],
             "matches":[
+                "<all_urls>",
                 "<all_urls>",
                 "<all_urls>",
                 "<all_urls>",

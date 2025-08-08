@@ -8,7 +8,7 @@ class MessageHandler {
             }
         });
 
-        return new Promise((resolve) => {
+        const fastPromise = new Promise((resolve) => {
             window.addEventListener('spotifyExtensionMessageResponse',(e) => {
                 if(e.detail.id != id) return;
 
@@ -17,7 +17,17 @@ class MessageHandler {
             });
             window.dispatchEvent(customEvent);
         });
+
+        return Promise.race([fastPromise, this.#generateRace(2000)]);
     
+    }
+    
+    #generateRace = (ms) => {
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                reject('Timeout');
+            }, ms);
+        });
     }
     
     addAlertListener = (callback) => {

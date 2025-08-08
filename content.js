@@ -126,7 +126,8 @@ function testInject(){
     injectFile('spotifyController.js');
     injectFile('injectMessaging.js');
     injectFile('inject.js');
-    injectFile('addons.js')
+    injectFile('menu.js');
+    injectFile('addons.js');
     
 }
 
