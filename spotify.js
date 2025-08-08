@@ -46,6 +46,24 @@ class Spotify {
         return;
     }
 
+    getSongData = async () => {
+        let songData = await this.#postMessageAsync('dataRequest', 'songData');
+        
+
+        let responseObject = {
+            'songPlaying':false
+        };
+
+        if(songData){
+            responseObject['songPlaying'] = true;
+            responseObject.title = songData.title;
+            responseObject.artist = songData.artist;
+            responseObject.time = songData.time/1000;
+        }
+
+        return responseObject;
+    }
+
     #postMessage = (type, data) => {
         let newEvent = new CustomEvent('spotifyExtensionMessage', {
             'detail':{
@@ -73,23 +91,5 @@ class Spotify {
         window.dispatchEvent(newEvent);
         return promise;
 
-    }
-
-    getSongData = async () => {
-        let songData = await this.#postMessageAsync('dataRequest', 'songData');
-        
-
-        let responseObject = {
-            'songPlaying':false
-        };
-
-        if(songData){
-            responseObject['songPlaying'] = true;
-            responseObject.title = songData.title;
-            responseObject.artist = songData.artist;
-            responseObject.time = songData.time/1000;
-        }
-
-        return responseObject;
     }
 }

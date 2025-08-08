@@ -1,5 +1,7 @@
 let songList = [];
 let lastSkippedTime = Date.now();
+let messagingHandler = new window.contentMessagingHandler();
+
 const spotifyController = new Spotify();
 
 const log = (...args) => {
@@ -65,13 +67,13 @@ const updateSongCount = async () => {
 }
 
 const setup = async () => {
-    window.addEventListener('spotifyExtensionAlert', (e) => {
+    messagingHandler.addAlertListener((e) => {
         if(e.detail.type == 'newSong'){
             newSongPlaying(e.detail.songData);
         }
     });
 
-    window.addEventListener('spotifyExtensionMessage', async (e) => {
+    messagingHandler.addEventMessageListener(async (e) => {
         if(e.detail.type == 'songListRequest'){
             let newSongList = await updateSongList();
             let customEvent = new CustomEvent('spotifyExtensionMessageResponse', {
@@ -83,10 +85,10 @@ const setup = async () => {
         }
     });
 
-    chrome.runtime.onMessage.addListener(async (msg, sender, response) => {
+    messagingHandler.addRuntimeListener(async (msg, response) => {
         if(msg.from != 'popup') return;
         if(msg.forward === true){
-            let forwardedResponse = await postMessageToInjectedAsync(msg.subject); 
+            let forwardedResponse = await messagingHandler.postMessageToInjectedAsync(msg.subject); 
 
             response({
                 'data':forwardedResponse.data
@@ -114,25 +116,6 @@ const setup = async () => {
 
 }
 
-const postMessageToInjectedAsync = async (type) => {
-    let id = Math.random();
-    let customEvent = new CustomEvent('spotifyExtensionMessage', {
-        'detail':{
-            'type':type,
-            'id':id
-        }
-    });
-    return new Promise((resolve) => {
-        const temp = (e) => {
-            if(e.detail.id != id) return;
-            resolve(e.detail);
-        }
-        window.addEventListener('spotifyExtensionMessageResponse',temp);
-        window.dispatchEvent(customEvent);
-    });
-
-}
-
 
 const injectFile = (fileName, callback) => {
 
@@ -148,6 +131,7 @@ const injectFile = (fileName, callback) => {
 
 function testInject(){
     injectFile('spotifyController.js');
+    injectFile('injectMessaging.js');
     injectFile('inject.js');
     injectFile('addons.js')
     

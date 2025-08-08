@@ -114,7 +114,6 @@ const spotifyControllerCreated = () => {
 }
 
 const mainAppLoaded = () => {
-    console.log('mainAppLoaded');
     setupBassBar();
 }
 

@@ -5,7 +5,6 @@ class SpotifyController {
     audioNodes;
     audioCtx;
     #lastSongPlaying;
-    broadcastChannel;
 
     #eventListeners = {};
 
@@ -43,24 +42,30 @@ class SpotifyController {
         if(this.audioNodes){
             this.audioNodes['biquadNode'].frequency.value = 120;
             this.audioNodes['biquadNode'].gain.value = db;
+        } else {
+            this.messagingHandler.broadcastAsync({
+                'type':'dataUpdate',
+                'data':'bassUpdate',
+                'bassVal':db
+            });
         }
-
         return;
+
     }
 
     getAudioAmplitudes = async () => {
-        if(!this.audioNodes){
-            return await this.#broadcastAsync({
-                'type':'dataRequest',
-                'data':'audioAmplitudes'
-            });
-        } else {
+        if(this.audioNodes){
             const analyzerNode = this.audioNodes['analyzerNode'];
 
             const dataArray = new Uint8Array(analyzerNode.frequencyBinCount);
             analyzerNode.getByteTimeDomainData(dataArray);
 
             return dataArray;
+        } else {
+            return await this.messagingHandler.broadcastAsync({
+                'type':'dataRequest',
+                'data':'audioAmplitudes'
+            });
         }
     }
 
@@ -126,58 +131,35 @@ class SpotifyController {
         return;
     }
 
-
-    #initializeBroadcastHandler = () => {
-        this.broadcastChannel = new BroadcastChannel('spotifyExtensionBroadcast');
-
-        this.broadcastChannel.addEventListener('message', (e) => {
-            const msg = e.data;
-
-            if(msg.data.type == 'dataRequest') this.#dataRequestHandler(msg);
-        });
-
-        return;
-    }
-
     #dataRequestHandler = async (msg) => {
         if(msg.data.data == 'audioAmplitudes'){
             if(!this.audioNodes) return;
             let responseData = await this.getAudioAmplitudes();
-            this.#broadcastResponse(responseData, msg.id);
+            messagingHandler.broadcastResponse(responseData, msg.id);
         }
 
         return;
     }
 
+    #dataUpdateHandler = async (msg) => {
+        if(msg.data.data == 'bassUpdate'){
+            if(!this.audioNodes) return;
+            this.bassBoost(msg.data.bassVal);
+            this.messagingHandler.broadcastResponse({},msg.id);
+        }
+    }
+
     initialize = () => {
-        this.#initializeBroadcastHandler();
+        this.messagingHandler = new MessagingHandler();
+        this.messagingHandler.initializeBroadcastHandler();
 
-        return;
-    }
-
-    #broadcastResponse = (data, id) => {
-        this.broadcastChannel.postMessage({
-            'data': data,
-            'id': id
+        this.messagingHandler.addBroadcastEventListener((e) => {
+            if(e.data.data.type == 'dataRequest') this.#dataRequestHandler(e.data);
+            if(e.data.data.type == 'dataUpdate') this.#dataUpdateHandler(e.data);
         });
 
         return;
     }
 
-    #broadcastAsync = async (data) => {
-        let id = Math.random();
 
-        this.broadcastChannel.postMessage({
-            'data':data,
-            'id':id
-        });
-
-        return new Promise((resolve) => {
-            this.broadcastChannel.addEventListener('message', (e) => {
-                let msg = e.data;
-                if(msg.id != id) return;
-                resolve(msg.data);
-            });
-        });
-    }
 }

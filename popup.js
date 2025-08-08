@@ -1,4 +1,4 @@
-let sideCanvas, sideCtx;
+let sideCanvas, sideCtx, messagingHandler;
 
 const setup = (data) => {
     let songListElem = document.querySelector('.songList');
@@ -18,26 +18,16 @@ const setup = (data) => {
 
 
     submitButton.onclick = function(){
-        
         let newSongObject = {
             'title':titleInput.value,
             'artist':artistInput.value,
             'skipTime':convertTime(timeInput.value)
         }
 
-        chrome.tabs.query({
-            active: true,
-            currentWindow: true
-          }, tabs => {
-            chrome.tabs.sendMessage(
-                tabs[0].id,
-                {from: 'popup', subject: 'songUpdate', songData:newSongObject},
-                (e) => {
-                    sentCallback(e);
-                    window.location.reload();
-                });
-          });
-
+        messagingHandler.postTabMessage({
+            'subject':'songUpdate',
+            'songData': newSongObject
+        }, window.location.reload);
     }
 
     initializeSidebarCanvas();
@@ -83,20 +73,10 @@ const generateSongElem = (song) => {
     elem.appendChild(removeButton);
 
     removeButton.onclick = function(e){
-        chrome.tabs.query({
-            active: true,
-            currentWindow: true
-          }, tabs => {
-            chrome.tabs.sendMessage(
-                tabs[0].id,
-                {from: 'popup', subject: 'deleteSong', songData:song},
-                (e) => {
-                    sentCallback(e);
-                    window.location.reload();
-                });
-          });
-
-      
+          messagingHandler.postTabMessage({
+            'subject':'deleteSong',
+            'songData':song
+          }, window.location.reload);
     }
 
     let numChildren = 1+document.querySelector('.songList').childElementCount;
@@ -114,50 +94,26 @@ const addListeners = () => {
         document.querySelector('.bassText').textContent = `Bass (${str}db)`;
         console.log('update to ',val);
 
-        chrome.tabs.query({
-            active: true,
-            currentWindow: true
-          }, tabs => {
-            chrome.tabs.sendMessage(
-                tabs[0].id,
-                {from: 'popup', subject: 'bassUpdate', bassVal:val},
-                sentCallback);
-          });
+
+        messagingHandler.postTabMessage({
+            'subject':'bassUpdate',
+            'bassVal':val
+        })
     });
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-    chrome.tabs.query({
-      active: true,
-      currentWindow: true
-    }, tabs => {
-      chrome.tabs.sendMessage(
-          tabs[0].id,
-          {from: 'popup', subject: 'songInfo'},
-          setup);
-    });
+    initializeMessagingHandler();
+
+    messagingHandler.postTabMessage({'subject': 'songInfo'}, setup);
 
     addListeners();
 
 
 });
 
-
-const postMessageToInjectedAsync = async (type) => {
-    return new Promise((resolve) => {
-        chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-            chrome.tabs.sendMessage(
-                tabs[0].id,
-                {
-                    from: 'popup', 
-                    forward:true, 
-                    subject: type
-                },
-                (response) => {
-                    resolve(response.data);
-                });
-          });
-    });
+const initializeMessagingHandler = () => {
+    messagingHandler = new MessagingHandler();
 }
 
 const initializeSidebarCanvas = () => {
@@ -175,7 +131,7 @@ const drawSidebarCanvas = async () => {
     let w = sideCanvas.width;
     let h = sideCanvas.height;
 
-    let rawData = await postMessageToInjectedAsync('audioDataRequest');
+    let rawData = await messaingHandler.postMessageToInjectedAsync('audioDataRequest');
 
 
     sideCtx.clearRect(0,0,w,h);

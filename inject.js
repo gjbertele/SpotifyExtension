@@ -1,4 +1,4 @@
-let APIList, spotifyController, APIHandler, songPlaying = {};
+let APIList, spotifyController, APIHandler, songPlaying = {}, messagingHandler;
 
 
 const patchPlayerElement = () => {
@@ -122,7 +122,7 @@ const playerUpdated = (e) => {
 
     songPlaying.title = e.data.item.name;
     songPlaying.artist = e.data.item.artists[0].name;
-    postAlert({
+    messagingHandler.postAlert({
         'type':'newSong',
         'songData': songPlaying
     });
@@ -142,25 +142,7 @@ const commandHandler = (detail) => {
     return;
 }
 
-const postResponse = (data) => {
-    let newEvent = new CustomEvent('spotifyExtensionMessageResponse', {
-        'detail': data
-    });
 
-    window.dispatchEvent(newEvent);
-
-    return;
-}
-
-const postAlert = (data) => {
-    let newEvent = new CustomEvent('spotifyExtensionAlert', {
-        'detail': data
-    });
-
-    window.dispatchEvent(newEvent);
-
-    return;
-}
 
 const songDataRequest = (detail) => {
         let newDetail = {}
@@ -175,85 +157,18 @@ const songDataRequest = (detail) => {
             }
         }
 
-        postResponse(newDetail)
+        messaingHandler.postResponse(newDetail)
 
         return;
 }
 
-const rawSongDataRequest = (detail) => {
-    let newDetail = {
-        'id':detail.id
-    }
-
-    if (window.playerAPI != null && window.playerAPI._harmony._controller._state) {
-        let controller = window.playerAPI._harmony._controller;
-        newDetail.data = {
-            'current_track':controller._state.track_window.current_track,
-            'time': controller._progressPosition
-        }
-    }
-
-    postResponse(newDetail);
-
-    return;
-
-}
-
-const audioDataRequest = async (detail) => {
-    let id = detail.id;
-    let responseData = await spotifyController.getAudioAmplitudes();
-    
-    postResponse({
-        'forward':true,
-        'id':id,
-        'data':responseData
-    });
-
-    return;
-}
-
-const initializeConnectionChannel = () => {
-    window.addEventListener('spotifyExtensionMessage', (e) => {
-        if (e.detail.type == 'command') {
-            commandHandler(e.detail)
-        } else if (e.detail.data == 'songData') {
-            songDataRequest(e.detail)
-        } else if(e.detail.type == 'audioDataRequest'){
-            audioDataRequest(e.detail);
-        }
-    });
-
-    return;
-}
-
-const postMessageAsync = async (type, data) => {
-    let id = Math.random();
-    let newEvent = new CustomEvent('spotifyExtensionMessage', {
-        'detail':{
-            'type':type,
-            'data':data,
-            'id':id
-        }
-    });
-    let promise = new Promise((resolve) => {
-        window.addEventListener('spotifyExtensionMessageResponse', (e) => {
-            if(e.detail.id != id) return;
-            window.removeEventListener('spotifyExtensionMessageResponse', this);
-            resolve(e.detail.data);
-        });
-    });
-    window.dispatchEvent(newEvent);
-    return promise;
-
-}
-
-window.postMessageAsync = postMessageAsync;
-
 
 try {
+    messagingHandler = new MessagingHandler();
+
     patchPlayerElement();
     initializeWebpackAccess();
-    initializeConnectionChannel();
+    messagingHandler.initializeConnectionChannel();
 } catch(err){
     console.log(err);
 }

@@ -13,8 +13,9 @@
     ],
     "content_scripts": [
         {
-          "js": ["spotify.js","content.js"],
+          "js": ["contentMessaging.js","spotify.js","content.js"],
           "matches": [
+            "https://open.spotify.com/*",
             "https://open.spotify.com/*",
             "https://open.spotify.com/*"
           ],
@@ -26,9 +27,11 @@
             "resources":[
                 "inject.js",
                 "spotifyController.js",
-                "addons.js"
+                "addons.js",
+                "injectMessaging.js"
             ],
             "matches":[
+                "<all_urls>",
                 "<all_urls>",
                 "<all_urls>",
                 "<all_urls>"
