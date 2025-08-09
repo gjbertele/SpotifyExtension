@@ -113,228 +113,6 @@ let playlistHeader = {
     'albumColor': null
 }
 
-const allowedToPatchPlaylist = async () => {
-    if(window.location.href.includes('playlist')) return true;
-    if(!window.location.href.includes('album')) return false;
-    let currentTrack = (await spotifyController.getQueuePrivate()).current_track;
-
-    if(!currentTrack.metadata?.entity_uri) return false;
-
-    let songURI = currentTrack.metadata.entity_uri.split(':')[2];
-    let albumURI = window.location.href.split('/');
-    albumURI = albumURI[albumURI.length - 1];
-
-    return songURI == albumURI;
-}
-
-const patchPlaylistHeader = async () => {
-    if (!(await allowedToPatchPlaylist())) return;
-
-    let mainContainer = document.querySelector('.main-view-container__scroll-node-child > main > section');
-    if (!mainContainer) {
-        setTimeout(patchPlaylistHeader, 1000);
-        return;
-    }
-
-    console.log('patched');
-
-    let headerContainer = mainContainer.childNodes[0];
-    let playlistContainer;
-    mainContainer.childNodes.forEach((child) => {
-        if(playlistContainer) return;
-        if(child.style.getPropertyValue('--background-base-70') != ''){
-            playlistContainer = child;
-            return;
-        }
-        if(child.firstChild?.style.getPropertyValue('--background-base-70') != ''){
-            playlistContainer = child.firstChild;
-            return;
-        }
-    });
-
-    let titleArea = document.querySelector('[data-testid="entityTitle"]').parentElement;
-
-    headerContainer.firstChild.style.setProperty('--background-base', '#121212FF');
-    headerContainer.firstChild.style.setProperty('--background-base-min-contrast', '#121212FF');
-
-    playlistContainer.style.setProperty('--background-base-70', '#121212FF');
-
-    titleArea.querySelector('figure').remove();
-
-    let artistBar = titleArea.querySelector('[data-testid="creator-link"]').parentElement.parentElement;
-    let clonedChild = artistBar.cloneNode(true);
-    let artistArea = clonedChild.querySelector('a');
-
-    clonedChild.classList.remove(clonedChild.classList[0]);
-
-    titleArea.querySelector('h1').style.overflow = 'visible';
-    titleArea.querySelector('h1').style.overflowX = 'visible';
-
-    titleArea.querySelector('[data-testid="entityTitle"]').style.width = '30%'; 
-    artistBar.parentElement.childNodes.forEach((child) => child.style.display = 'none');
-    artistBar.parentElement.appendChild(clonedChild);
-
-    setImgElement();
-
-    spotifyController.addEventListener('newsong', updatePlaylistHeader);
-
-
-    playlistHeader.titleArea = titleArea;
-    playlistHeader.artistArea = artistArea;
-
-    createVisualizerCanvas();
-
-    updatePlaylistHeader();
-}
-
-const setImgElement = () => {
-    playlistHeader.imgElement = Array.from(document.querySelectorAll('[sizes]')).filter((i) => i.loading == 'lazy' || i.loading == 'eager')[0];
-}
-
-const createVisualizerCanvas = () => {
-    if(playlistHeader.imgElement == null || playlistHeader.imgElement == undefined) setImgElement();
-
-    let titleArea = playlistHeader.titleArea;
-
-    let canvas = document.createElement('canvas');
-    let imgRect = playlistHeader.imgElement.getBoundingClientRect();
-
-    canvas.width = 0.4 * (document.body.clientWidth - imgRect.width - imgRect.x);
-    canvas.height = 0;
-
-    canvas.style.width = canvas.width + 'px';
-
-    titleArea.appendChild(canvas);
-
-    playlistHeader.canvas = canvas;
-    playlistHeader.ctx = canvas.getContext('2d');
-
-    visualizerDraw();
-}
-
-const visualizerDraw = async () => {
-    let ctx = playlistHeader.ctx;
-    let h = playlistHeader.canvas.height;
-    let w = playlistHeader.canvas.width;
-
-    let rawData = await spotifyController.getAudioAmplitudes();
-
-    if(rawData == 'Timeout'){
-        requestAnimationFrame(visualizerDraw);
-        return;
-    }
-
-    let data = [];
-    for (let i in rawData) data.push(rawData[i]);
-
-    let length = data.length;
-
-    for (let i = 0; i < length; i++) {
-        data[i] = data[i] / 256;
-        data[i] = Math.abs(data[i] - 0.5);
-        if (data[i] > 1) data[i] = 1;
-        data[i] *= h * 3 / 4;
-    }
-
-    let smoothedData = new Array(length);
-    let windowSize = 5;
-    for (let i = 0; i < length; i++) {
-        smoothedData[i] = 0;
-        for (let j = Math.max(0, i - windowSize); j <= Math.min(i + windowSize, length - 1); j++) {
-            smoothedData[i] += data[i] / (2 * windowSize + 1);
-        }
-    }
-
-    ctx.fillStyle = playlistHeader.albumColor ? rgbToHex(...playlistHeader.albumColor) : '#1db954';
-    ctx.clearRect(0, 0, w, h);
-
-    for (let i = 0; i < length; i++) {
-        ctx.fillRect(i * w / length, h / 2 - smoothedData[i], (w - 10) / length, smoothedData[i] * 2);
-    }
-
-    requestAnimationFrame(visualizerDraw);
-}
-
-const rgbToHex = (r, g, b) => {
-    function componentToHex(c) {
-      const hex = c.toString(16);
-      return hex.length === 1 ? "0" + hex : hex;
-    }
-    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
-}
-
-const updatePlaylistHeader = async () => {
-    let currentSong = spotifyController.getCurrentSong();
-    let songTitle, artistUID, currentArtistName, imageSrc;
-
-    if (currentSong) {
-        songTitle = currentSong.name;
-        currentArtistName = currentSong.artists[0].name;
-        artistUID = currentSong.artists[0].uri.split(':')[2];
-        imageSrc = currentSong.images[2].url;
-    }
-
-
-    if (songTitle) playlistHeader.titleArea.querySelector('h1').textContent = songTitle;
-
-    playlistHeader.artistArea.textContent = currentArtistName;
-    playlistHeader.artistArea.href = 'https://open.spotify.com/artist/' + artistUID;
-
-    setImgElement();
-
-    if (imageSrc) {
-        playlistHeader.imgElement.removeAttribute('srcset');
-        playlistHeader.imgElement.setAttribute('src', imageSrc);
-        playlistHeader.albumColor = await getAverageColor(imageSrc);
-    }
-
-    playlistHeader.canvas.height = 0;
-    playlistHeader.canvas.style.height = '0px';
-
-    setTimeout(() => {
-        let titleRect = playlistHeader.titleArea.querySelector('h1').getBoundingClientRect();
-        let imgRect = playlistHeader.imgElement.getBoundingClientRect();
-
-        let diff = titleRect.y - imgRect.y;
-        let targetDiff = 0;
-
-        let newHeight = diff - targetDiff;
-        playlistHeader.canvas.height = Math.min(Math.max(newHeight, imgRect.height / 5), imgRect.height/3);
-        playlistHeader.canvas.style.height = playlistHeader.canvas.height + 'px';
-    }, 50);
-
-}
-
-const getAverageColor = async (url) => {
-    const tempCanvas = document.createElement('canvas');
-    const ctx = tempCanvas.getContext('2d');
-    tempCanvas.width = 640;
-    tempCanvas.height = 640;
-    return new Promise((resolve) => {
-            var img = new Image;
-            img.onload = function() {
-                ctx.drawImage(img, 0, 0);
-                const data = ctx.getImageData(0, 0, 640, 640).data;
-                let averageR = 0;
-                let averageG = 0;
-                let averageB = 0;
-                let count = 0;
-                for (let i = 0; i < data.length; i += 4) {
-                    averageR += data[i];
-                    averageG += data[i + 1];
-                    averageB += data[i + 2];
-                    count++;
-                }
-                averageR /= count;
-                averageG /= count;
-                averageB /= count;
-                resolve([parseInt(averageR), parseInt(averageG), parseInt(averageB)]);
-
-        }
-        img.src = url;
-    });
-}
-
 
 document.body.onmousemove = (e) => {
     mouse.x = e.clientX;
@@ -346,13 +124,25 @@ const spotifyControllerCreated = () => {
     setupAttachLinks();
     setupCheckSong();
 }
+
 const mainAppLoaded = () => {
     setupBassBar();
+    
     setInterval(() => {
         document.querySelector('[aria-label="Hide Now Playing view"]')?.click();
     });
-    patchPlaylistHeader();
+
+    evaluateFunctionOnLoad(patchPlaylistHeader);
+}
+
+const evaluateFunctionOnLoad = (func) => {
+    try {
+        func();
+    } catch (err){
+        console.log(`Error loading ${func.name}`,err);
+        setTimeout(() => { evaluateFunctionOnLoad(func); }, 10);
+    }
 }
 
 window.addEventListener('spotifyControllerCreated', spotifyControllerCreated);
-window.addEventListener('mainAppLoaded', mainAppLoaded)
+window.addEventListener('mainAppLoaded', mainAppLoaded);

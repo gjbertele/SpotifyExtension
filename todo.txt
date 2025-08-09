@@ -1,0 +1,11 @@
+return to default if no longer playing song
+
+test allowed patch on dandelion
+
+minimum brightness value for color
+
+tap into go._contextualShuffle._indexedDbAPI._channel broadcast channel
+
+lyrics element builder is 25775
+
+add lyrics fetching

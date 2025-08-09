@@ -1,7 +1,0 @@
-find use for menu class
-
-fix element getting when not on personally owned playlist
-
-add check for rewriting album if playing song not from it
-
-return to default if no longer playing song

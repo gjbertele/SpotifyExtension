@@ -95,6 +95,12 @@ class SpotifyController {
         return this.playerAPI._queue.getQueue().current;
     }
 
+    getSongLyrics = async (uri) => {
+        if(!this.lyricAPI) this.#updateLyricAPI();
+
+        return await this.lyricAPI.S(uri,null,false,true);
+    }
+
     clearQueue = async () => {
         this.playerAPI._queue.clearQueue();
 
@@ -141,6 +147,18 @@ class SpotifyController {
         this.playerAPI = await window.getPlayerAPI();
         this.#lastSongPlaying = this.getCurrentSong();
 
+        return;
+    }
+
+    #updateLyricAPI = () => {
+        for(let idx in window.webpackRequire.m){
+            let mod = window.webpackRequire(idx);
+            if(mod.S && mod.z){
+                this.lyricAPI = mod;
+                return;
+            }
+        }
+        
         return;
     }
 

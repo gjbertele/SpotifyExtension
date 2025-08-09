@@ -127,6 +127,7 @@ function testInject(){
     injectFile('injectMessaging.js');
     injectFile('inject.js');
     injectFile('menu.js');
+    injectFile('playerPatch.js');
     injectFile('addons.js');
     
 }
