@@ -128,6 +128,7 @@ function testInject(){
     injectFile('inject.js');
     injectFile('menu.js');
     injectFile('playerPatch.js');
+    injectFile('lyricsPatch.js');
     injectFile('addons.js');
     
 }

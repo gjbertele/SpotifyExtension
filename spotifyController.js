@@ -98,7 +98,11 @@ class SpotifyController {
     getSongLyrics = async (uri) => {
         if(!this.lyricAPI) this.#updateLyricAPI();
 
-        return await this.lyricAPI.S(uri,null,false,true);
+        try {
+            return await this.lyricAPI.S(uri,null,false,true);
+        } catch(err) {
+            return null;
+        }
     }
 
     clearQueue = async () => {

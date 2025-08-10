@@ -30,9 +30,11 @@
                 "addons.js",
                 "injectMessaging.js",
                 "menu.js",
-                "playerPatch.js"
+                "playerPatch.js",
+                "lyricsPatch.js"
             ],
             "matches":[
+                "<all_urls>",
                 "<all_urls>",
                 "<all_urls>",
                 "<all_urls>",

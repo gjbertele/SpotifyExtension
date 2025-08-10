@@ -63,7 +63,11 @@ const setupBassBar = () => {
     volumeBar.parentElement.insertBefore(bassBar, volumeBar.nextSibling);
 
     iconElement.querySelector('path').setAttribute('d', lightningSVGString);
+
     iconElement.style.transform = 'scale(1.5)';
+    
+    let children = iconElement.childNodes;
+    for(let idx = 1; idx<children.length; idx++) children[idx].remove();
 
     progressBar.style.setProperty('--is-active-fg-color', '#B9541D');
 
@@ -105,15 +109,6 @@ const setBassBarValue = (value) => {
     bassDiff = value * 20 - 10;
 }
 
-let playlistHeader = {
-    'titleArea': null,
-    'imgElement': null,
-    'artistArea': null,
-    'canvas': null,
-    'albumColor': null
-}
-
-
 document.body.onmousemove = (e) => {
     mouse.x = e.clientX;
     mouse.y = e.clientY;
@@ -127,7 +122,7 @@ const spotifyControllerCreated = () => {
 
 const mainAppLoaded = () => {
     setupBassBar();
-    
+
     setInterval(() => {
         document.querySelector('[aria-label="Hide Now Playing view"]')?.click();
     });

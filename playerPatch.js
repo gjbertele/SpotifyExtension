@@ -1,3 +1,13 @@
+let playlistHeader = {
+    'titleArea': null,
+    'imgElement': null,
+    'artistArea': null,
+    'canvas': null,
+    'albumColor': null
+}
+
+window.playlistHeader = playlistHeader;
+
 const allowedToPatchPlaylist = async () => {
     if(window.location.href.includes('playlist')) return true;
     if(!window.location.href.includes('album')) return false;
@@ -37,6 +47,7 @@ const recolorHeaderContainer = (headerContainer) => {
 const removeRepeatableExcessElements = () => {
     document.querySelector('[data-testid="edit-image-button"]')?.parentElement.parentElement.remove();
     playlistHeader.titleArea.querySelector('figure')?.remove();
+
     let removed = false;
     playlistHeader.titleArea.querySelectorAll('[data-encore-id="text"]').forEach((elem) => {
         if(!removed && elem.tagName.toLowerCase() == 'span'){
@@ -44,6 +55,10 @@ const removeRepeatableExcessElements = () => {
             removed = true;
         }
     });
+    
+    document.querySelector('[data-testid="control-button-npv"]')?.remove();
+    document.querySelector('[data-testid="pip-toggle-button"]')?.remove();
+    document.querySelector('[data-testid="fullscreen-mode-button"]')?.remove();
 }
 
 const getChildWithStyleAttribute = (elem, attribute) => {
@@ -70,20 +85,22 @@ const patchPlaylistHeader = async () => {
 
 
     let mainContainer = document.querySelector('.main-view-container__scroll-node-child > main > section');
+
     if (!mainContainer) {
         setTimeout(patchPlaylistHeader, 1000);
         return;
     }
 
     let headerContainer = mainContainer.childNodes[0];
+    recolorHeaderContainer(headerContainer);
+
     let playlistContainer = getPlaylistContainer(mainContainer);
+    playlistContainer.style.setProperty('--background-base-70', '#121212FF');
+
 
     let titleArea = document.querySelector('[data-testid="entityTitle"]').parentElement;
     playlistHeader.titleArea = titleArea;
 
-    recolorHeaderContainer(headerContainer);
-
-    playlistContainer.style.setProperty('--background-base-70', '#121212FF');
 
     let artistBar = titleArea.querySelector('[data-testid="creator-link"]').parentElement.parentElement;
     let clonedChild = artistBar.cloneNode(true);
@@ -100,6 +117,10 @@ const patchPlaylistHeader = async () => {
     spotifyController.addEventListener('newsong', updatePlaylistHeader);
     createVisualizerCanvas();
     updatePlaylistHeader();
+
+    const creationEvent = new CustomEvent('playerAreaPatched');
+    window.dispatchEvent(creationEvent);
+    playlistHeader.initialized = true;
 }
 
 const setImgElement = () => {
@@ -212,7 +233,7 @@ const rgbToHex = (r, g, b) => {
 
 const rescaleTitleElem = () => {
     let titleElem = playlistHeader.titleArea.querySelector('h1');
-    titleElem.parentElement.style.width = '50%';
+    titleElem.parentElement.style.width = playlistHeader.canvas.style.width;
     titleElem.parentElement.style.setProperty('overflow','wrap !important');
 
     return;
@@ -243,6 +264,8 @@ const updateTitleElem = (songTitle) => {
     return;
 }
 
+
+
 const updateArtistArea = (currentArtistName, artistUID) => {
     playlistHeader.artistArea.textContent = currentArtistName;
     playlistHeader.artistArea.href = 'https://open.spotify.com/artist/' + artistUID;
@@ -254,7 +277,9 @@ const updateTopbar = () => {
     let topbar = document.querySelector('[data-testid=topbar]');
     let topbarElem = getChildWithStyleAttribute(topbar, '--background-base');
 
-    topbarElem?.style.setProperty('--background-base',rgbToHex(...playlistHeader.albumColor));
+    let chosenColor = playlistHeader.albumColor ? rgbToHex(...playlistHeader.albumColor) : '#1db954';
+
+    topbarElem?.style.setProperty('--background-base',chosenColor);
 
     return;
 }
@@ -269,6 +294,11 @@ const updatePlaylistHeader = async () => {
     removeRepeatableExcessElements();
     rescaleCanvasElem();
 
+    playlistHeader.lyricsInfo = {
+        'lyrics':[],
+        'time':-1
+    }
+
     if (currentSong) {
         songTitle = currentSong.name;
         currentArtistName = currentSong.artists[0].name;
@@ -281,6 +311,11 @@ const updatePlaylistHeader = async () => {
         playlistHeader.imgElement.removeAttribute('srcset');
         playlistHeader.imgElement.setAttribute('src', imageSrc);
         playlistHeader.albumColor = await getAverageColor(imageSrc);
+
+        playlistHeader.lyricsInfo = {
+            'lyrics':[],
+            'time':spotifyController.playerAPI._harmony._controller._progressPosition
+        }
     }
 
     playlistHeader.canvas.height = 0;
@@ -290,6 +325,21 @@ const updatePlaylistHeader = async () => {
     updateTopbar();
 
     return;
+}
+
+const computeBrightness = (r, g, b) => {
+    return 0.2126*r + 0.7152*g + 0.0722*b;
+}
+
+const decodeBucketCompression = (bucketSize, val) => {
+    let r = bucketSize * Math.floor(val / (255 * 255));
+    let g = bucketSize * Math.floor((val % (255 * 255)) / 255);
+    let b = bucketSize * (val % 255);
+    return [r,g,b];
+}
+
+const computeScaleFactor = (bucketSize, val) => {
+    return Math.sqrt(computeBrightness(...decodeBucketCompression(bucketSize, parseInt(val))));
 }
 
 
@@ -307,6 +357,7 @@ const getAverageColor = async (url) => {
                 let bucketSize = 10;
                 let counts = {};
 
+                let averageBrightness = 0;
 
                 for(let i = 0; i<data.length; i+=4){
                     let [r,g,b] = [data[i], data[i+1], data[i+2]];
@@ -316,11 +367,15 @@ const getAverageColor = async (url) => {
 
                     if(!counts[idx])  counts[idx]=0;
                     counts[idx]++;
+
+                    averageBrightness += computeBrightness([r,g,b]);
                 }
                 
+                averageBrightness /= data.length/2;
+
                 let keys = Object.keys(counts);
                 keys.sort((a,b) => {
-                    return counts[b] - counts[a];
+                    return computeScaleFactor(bucketSize, b)*counts[b] - computeScaleFactor(bucketSize, a)*counts[a];
                 });
 
 
@@ -330,12 +385,20 @@ const getAverageColor = async (url) => {
                 for(let idx = 0; idx<mappedKeys.length; idx++){
                     let val = mappedKeys[idx];
                     
-                    let r = bucketSize * Math.floor(val / (255 * 255));
-                    let g = bucketSize * Math.floor((val % (255 * 255)) / 255);
-                    let b = bucketSize * (val % 255);
+                    let [r,g,b] =  decodeBucketCompression(bucketSize, val); 
                     
-                    let brightness = 0.2126*r + 0.7152*g + 0.0722*b;
-                    if(brightness <= 80) continue;
+                    let brightness = computeBrightness(...[r,g,b]);
+
+                    if(brightness <= averageBrightness/3) continue;
+
+                    if(brightness <= 60){
+                        r = 255-r;
+                        g = 255-g;
+                        b = 255-b;
+                    }
+
+                    console.log(brightness, [r,g,b]);
+
                     resolve([r,g,b]);
                     break;
                 }

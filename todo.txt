@@ -2,10 +2,33 @@ return to default if no longer playing song
 
 test allowed patch on dandelion
 
-minimum brightness value for color
-
 tap into go._contextualShuffle._indexedDbAPI._channel broadcast channel
 
 lyrics element builder is 25775
 
-add lyrics fetching
+use ai to detect individual word timings??
+
+delete now playing button
+
+reattach on navigation?
+
+remove excess deleting excess
+
+
+
+for scroll:
+    save color, time, content of each line
+    
+    draw each line process:
+        set each line to be in line space at some height -> c*idx
+        perceived height is line space height - scrollY
+        get distance from perceived height to center
+        scale font size according to bump function
+        take distance from center, take to 1.5 power, readd
+    
+    every check frame:
+        if autoscrolling:
+            set scrollY to be tween of some time ms between line heights
+            set current line color to be white,
+            previous lines to be grayed
+            next lines a little gray
