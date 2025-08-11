@@ -10,8 +10,8 @@ let lyricsController = {
     'displayLyrics': false
 };
 
-const scrollLyrics = () => {
-    if(!lyricsController.autoscroll) return;
+const scrollLyrics = (instant = false) => {
+    if(!instant && !lyricsController.autoscroll) return;
 
     let currentLine = 0;
     let lyrics = lyricsController.currentLyrics;
@@ -26,9 +26,12 @@ const scrollLyrics = () => {
     let renderedHeight = lyricsController.canvasSize.renderedHeight;
 
     let lineHeight = (currentLine+1)*renderedHeight/4;
-    if(lyricsController.scrollY < lineHeight - renderedHeight/2){
-        let scrollDiff = lyricsController.canvasSize.renderedHeight/60;
-        playlistHeader.lyricsArea.querySelector('canvas').parentElement.scrollBy(0,scrollDiff);
+    let distToScroll = (lineHeight - renderedHeight/2) - lyricsController.scrollY;
+    if(distToScroll > 0){
+        let scrollDiff = lyricsController.canvasSize.renderedHeight/60 * distToScroll/100;
+        let elem = playlistHeader.lyricsArea.querySelector('canvas').parentElement;
+       
+        elem.scrollBy(0,Math.min(distToScroll,scrollDiff));
     }
 
 
@@ -72,7 +75,7 @@ const bump = (x) => {
 }
 
 const calculateOpacity = (dist) => {
-    let val = bump(dist*1.75/lyricsController.canvasSize.renderedHeight);
+    let val = bump(dist*2.5/lyricsController.canvasSize.renderedHeight);
     if(val > 1) val =1;
     return val;
 }
@@ -104,7 +107,7 @@ const renderLine = (line, height, ctx, w, h) => {
         predictedWidth = ctx.measureText(line.content).width;
     }
 
-    ctx.fillText(line.content, (w - predictedWidth)/2, transformedHeight + lyricsController.canvasSize.renderedHeight/2);
+    ctx.fillText(line.content, (w - predictedWidth)/2, transformedHeight + lyricsController.canvasSize.renderedHeight*0.6);
 
     return;
 
@@ -115,14 +118,12 @@ const getLyricsMaxHeight = () => {
 }
 
 const onCanvasScroll = () => {
-    if(!lyricsController.displayLyrics) return;
-
     let targetElement = playlistHeader.lyricsArea.querySelector('canvas').parentElement;
 
     let newScrollHeight = targetElement.scrollTop - lyricsController.canvasSize.renderedHeight/2;
     targetElement.scrollTo(0, lyricsController.canvasSize.renderedHeight*2/4);
 
-    if(newScrollHeight > 10) lyricsController.autoscroll = false;
+    //if(lyricsController.displayLyrics && newScrollHeight > 10) lyricsController.autoscroll = false;
 
     let maxHeight = getLyricsMaxHeight();
 
@@ -131,7 +132,7 @@ const onCanvasScroll = () => {
 
     lyricsController.scrollY += newScrollHeight;
 
-    lyricsArea.querySelectorAll('.os-scrollbar-auto-hide').forEach((elem) => {
+    playlistHeader.lyricsArea.querySelectorAll('.os-scrollbar-auto-hide').forEach((elem) => {
         elem.style.display = 'none';
     });
 
@@ -176,6 +177,7 @@ const createLyricsArea = () => {
         lyricsCanvasContainer.style.maxHeight = mainRect.height+'px';
         lyricsCanvasContainer.style.overflowY = 'scroll';
         lyricsCanvasContainer.style.overflowX = 'visible';
+        lyricsCanvasContainer.style.scrollbarWidth = 'none';
 
         lyricsController.canvasSize.renderedHeight = mainRect.height;
         lyricsController.canvasSize.width = lyricsCanvas.width;
@@ -200,11 +202,9 @@ const updateSongLyrics = async () => {
     lyricsController.autoscroll = true;
 
     let currentSong = spotifyController.getCurrentSong();
-    if(!currentSong) return;
-    let lyrics = await spotifyController.getSongLyrics(currentSong.uri);
-    if(!lyrics) return;
+    let lyrics = currentSong ? await spotifyController.getSongLyrics(currentSong.uri) : null;
 
-    let lines = lyrics.lyrics.lines;
+    let lines = lyrics ? lyrics.lyrics.lines : [];
     lyricsController.currentLyrics = [];
 
 
@@ -218,7 +218,6 @@ const updateSongLyrics = async () => {
 
         lyricsController.currentLyrics.push(lineObject);
     }
-
 
     lyricsController.scrollY = 0;
     onCanvasScroll();
@@ -246,6 +245,8 @@ const styleLyricsArea = (div) => {
 
 const lyricsIconOnClick = () => {
     lyricsController.displayLyrics = !lyricsController.displayLyrics;
+    if(lyricsController.displayLyrics) scrollLyrics(true);
+    lyricsController.autoscroll = true;
 
     return;
 }

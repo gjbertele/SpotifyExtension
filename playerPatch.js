@@ -284,6 +284,11 @@ const updateTopbar = () => {
     return;
 }
 
+const getArtistName = (song) => {
+    if(song.artists.length > 0) return song.artists[0].name;
+    return song.show?.name;
+}
+
 const updatePlaylistHeader = async () => {
     if(!(await allowedToPatchPlaylist())) return;
 
@@ -301,8 +306,8 @@ const updatePlaylistHeader = async () => {
 
     if (currentSong) {
         songTitle = currentSong.name;
-        currentArtistName = currentSong.artists[0].name;
-        artistUID = currentSong.artists[0].uri.split(':')[2];
+        currentArtistName = getArtistName(currentSong);
+        artistUID = currentSong.artists[0]?.uri.split(':')[2];
         imageSrc = currentSong.images[2].url;
 
         updateTitleElem(songTitle);
@@ -339,9 +344,66 @@ const decodeBucketCompression = (bucketSize, val) => {
 }
 
 const computeScaleFactor = (bucketSize, val) => {
-    return Math.sqrt(computeBrightness(...decodeBucketCompression(bucketSize, parseInt(val))));
+    return computeColorfullness(...decodeBucketCompression(bucketSize, parseInt(val)));
 }
 
+const computeColorfullness = (r, g, b) => {
+    let max = Math.max(r, g, b);
+    let min = Math.min(r, g, b);
+    if(max == 0) return 0;
+    return (max*max - min*min)/max;
+}
+
+const initiallyIterateImage = (data, bucketSize) => {
+    let counts = {};
+    let averageBrightness = 0;
+
+    for(let i = 0; i<data.length; i+=4){
+        let [r,g,b] = [data[i], data[i+1], data[i+2]];
+        let [rBucket, gBucket, bBucket] = [Math.floor(r/bucketSize), Math.floor(g/bucketSize), Math.floor(b/bucketSize)];
+
+        let idx = rBucket*255*255+gBucket*255+bBucket;
+
+        if(!counts[idx])  counts[idx]=0;
+        counts[idx]++;
+
+        averageBrightness += computeBrightness([r,g,b]);
+    }
+
+    averageBrightness /= data.length/2;
+
+    return [counts, averageBrightness];
+}
+
+const scaledSortByKey = (arr, bucketSize) => {
+    let keys = Object.keys(arr);
+    keys.sort((a,b) => {
+        return computeScaleFactor(bucketSize, b)*arr[b] - computeScaleFactor(bucketSize, a)*arr[a];
+    });
+    return keys;
+}
+
+const findFirstApplicable = (arr, averageBrightness, bucketSize) => {
+    for(let idx = 0; idx<arr.length; idx++){
+        let val = arr[idx];
+        
+        let [r,g,b] =  decodeBucketCompression(bucketSize, val); 
+        
+        let brightness = computeBrightness(...[r,g,b]);
+
+        if(brightness <= averageBrightness/3) continue;
+
+        if(brightness <= 30){
+            r = 255-r;
+            g = 255-g;
+            b = 255-b;
+        }
+
+        console.log(brightness, [r,g,b]);
+
+        return [r,g,b];
+    }
+}
 
 const getAverageColor = async (url) => {
     const tempCanvas = document.createElement('canvas');
@@ -355,53 +417,15 @@ const getAverageColor = async (url) => {
                 const data = ctx.getImageData(0, 0, 640, 640).data;
 
                 let bucketSize = 10;
-                let counts = {};
-
-                let averageBrightness = 0;
-
-                for(let i = 0; i<data.length; i+=4){
-                    let [r,g,b] = [data[i], data[i+1], data[i+2]];
-                    let [rBucket, gBucket, bBucket] = [Math.floor(r/bucketSize), Math.floor(g/bucketSize), Math.floor(b/bucketSize)];
-
-                    let idx = rBucket*255*255+gBucket*255+bBucket;
-
-                    if(!counts[idx])  counts[idx]=0;
-                    counts[idx]++;
-
-                    averageBrightness += computeBrightness([r,g,b]);
-                }
+                let [counts, averageBrightness] = initiallyIterateImage(data, bucketSize);
                 
-                averageBrightness /= data.length/2;
 
-                let keys = Object.keys(counts);
-                keys.sort((a,b) => {
-                    return computeScaleFactor(bucketSize, b)*counts[b] - computeScaleFactor(bucketSize, a)*counts[a];
-                });
-
-
+                let keys = scaledSortByKey(counts, bucketSize);
                 let mappedKeys = keys.map(i => i = parseInt(i));
 
+                let resultingColor = findFirstApplicable(mappedKeys, averageBrightness, bucketSize);
 
-                for(let idx = 0; idx<mappedKeys.length; idx++){
-                    let val = mappedKeys[idx];
-                    
-                    let [r,g,b] =  decodeBucketCompression(bucketSize, val); 
-                    
-                    let brightness = computeBrightness(...[r,g,b]);
-
-                    if(brightness <= averageBrightness/3) continue;
-
-                    if(brightness <= 60){
-                        r = 255-r;
-                        g = 255-g;
-                        b = 255-b;
-                    }
-
-                    console.log(brightness, [r,g,b]);
-
-                    resolve([r,g,b]);
-                    break;
-                }
+                resolve(resultingColor);
         }
         img.src = url;
     });
