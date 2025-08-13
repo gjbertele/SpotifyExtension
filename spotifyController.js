@@ -210,11 +210,10 @@ class SpotifyController {
 
 
     songEventDetect = async () => {
-        requestAnimationFrame(this.songEventDetect);
-
-
         let volume = await this.getComputedVolume();
         let wSize = this.beatController.wSize;
+
+        requestAnimationFrame(this.songEventDetect);
 
         if (isNaN(volume)) return;
 
@@ -271,9 +270,12 @@ class SpotifyController {
             'wSize': 45,
             'wSum': 0,
             'alpha': 0.7,
-            'beatDist': 100,
+            'beatDist': 250,
             'songAvg': 0
-        }
+        };
+
+        return;
+
     }
 
     initialize = () => {

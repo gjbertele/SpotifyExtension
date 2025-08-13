@@ -121,6 +121,14 @@ const patchPlaylistHeader = async () => {
     const creationEvent = new CustomEvent('playerAreaPatched');
     window.dispatchEvent(creationEvent);
     playlistHeader.initialized = true;
+
+
+    window.addEventListener('resize', scalingUpdate);
+}
+
+const scalingUpdate = () => {
+    rescaleCanvasElem();
+    rescaleTitleElem();
 }
 
 const setImgElement = () => {
@@ -219,13 +227,13 @@ const visualizerDraw = async () => {
 
     ctx.clearRect(0, 0, w, h);
 
-    let chosenColor = playlistHeader.albumColor ? rgbToHex(...playlistHeader.albumColor) : '#1db954';
+    let chosenColor = playlistHeader.albumColor ? rgbToHex(...playlistHeader.albumColor) : '#FFFFFF';
     ctx.fillStyle = chosenColor;
 
     for (let i = 0; i < length; i++) {
         ctx.fillRect(i * w / length, h / 2 - taperedData[i], (w - 10) / length, taperedData[i] * 2);
     }
-
+    
     requestAnimationFrame(visualizerDraw);
 }
 

@@ -174,7 +174,7 @@ const createLyricsArea = () => {
     setTimeout(() => {
         let mainRect = playlistHeader.titleArea.getBoundingClientRect();
         lyricsCanvas.height = mainRect.height*2;
-
+        
         lyricsCanvasContainer.style.maxHeight = mainRect.height+'px';
         lyricsCanvasContainer.style.overflowY = 'scroll';
         lyricsCanvasContainer.style.overflowX = 'visible';
@@ -193,8 +193,17 @@ const createLyricsArea = () => {
 
     updateSongLyrics();
     drawLyricsArea();
+    
+    window.addEventListener('resize', updateCanvasScaling)
 
     return;
+}
+
+const updateCanvasScaling = () => {
+    let rect = playlistHeader.canvas.getBoundingClientRect();
+    playlistHeader.lyricsCanvas.parentElement.style.width = (document.body.clientWidth - rect.width - rect.x - 70)+'px';
+    playlistHeader.lyricsCanvas.width = (document.body.clientWidth - rect.width - rect.x - 70);
+    playlistHeader.lyricsCanvas.style.width = playlistHeader.lyricsCanvas.width + 'px';
 }
 
 

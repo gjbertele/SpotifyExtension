@@ -1,5 +1,7 @@
-tap into go._contextualShuffle._indexedDbAPI._channel broadcast channel
-
 reattach on navigation?
 
-remove excess deleting excess
+fix title sizing
+
+fix lyrics sizing
+
+fix player sizing

@@ -133,8 +133,6 @@ function testInject(){
     injectjs('spotifyController.js');
     injectjs('injectMessaging.js');
     injectjs('inject.js');
-    injectjs('menu.js');
-    injectjs('fft.js');
     injectjs('playerPatch.js');
     injectjs('lyricsPatch.js');
     injectjs('addons.js');
