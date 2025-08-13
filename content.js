@@ -111,7 +111,6 @@ const setup = async () => {
 
 
 const injectjs = (fileName, callback) => {
-
     let temporaryElement = document.createElement('script');
     temporaryElement.type = 'text/javascript';
     temporaryElement.src = chrome.runtime.getURL(`./${fileName}`);
@@ -147,4 +146,4 @@ document.addEventListener('readystatechange',function(e){
     if(document.readyState == 'complete') setup();
 });
 
-
+console.log(chrome.webRequest);

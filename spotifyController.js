@@ -8,6 +8,7 @@ class SpotifyController {
 
     #eventListeners = {};
 
+    amplitudeGets = 0;
 
     beatController = {
         'lastBeatTime': 0,
@@ -65,6 +66,8 @@ class SpotifyController {
     }
 
     getAudioAmplitudes = async () => {
+        this.amplitudeGets++;
+        
         if (this.audioNodes) {
             const analyzerNode = this.audioNodes['analyzerNode'];
 
