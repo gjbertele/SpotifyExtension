@@ -110,7 +110,7 @@ const setup = async () => {
 }
 
 
-const injectFile = (fileName, callback) => {
+const injectjs = (fileName, callback) => {
 
     let temporaryElement = document.createElement('script');
     temporaryElement.type = 'text/javascript';
@@ -121,15 +121,23 @@ const injectFile = (fileName, callback) => {
     document.head.insertBefore(temporaryElement, document.head.firstChild);
 }
 
+const injectcss = (fileName) => {
+    let temporaryElement = document.createElement('style');
+    temporaryElement.rel = 'stylesheet';
+    temporaryElement.href = chrome.runtime.getURL(`./${fileName}`);
+
+    document.head.insertBefore(temporaryElement, document.head.firstChild);
+}
 
 function testInject(){
-    injectFile('spotifyController.js');
-    injectFile('injectMessaging.js');
-    injectFile('inject.js');
-    injectFile('menu.js');
-    injectFile('playerPatch.js');
-    injectFile('lyricsPatch.js');
-    injectFile('addons.js');
+    injectjs('spotifyController.js');
+    injectjs('injectMessaging.js');
+    injectjs('inject.js');
+    injectjs('menu.js');
+    injectjs('fft.js');
+    injectjs('playerPatch.js');
+    injectjs('lyricsPatch.js');
+    injectjs('addons.js');
     
 }
 

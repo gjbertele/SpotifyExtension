@@ -19,7 +19,7 @@ const scrollLyrics = (instant = false) => {
     let currentTime = spotifyController.playerAPI._harmony._controller._progressPosition;
 
     while(currentLine < length-1){
-        if(lyrics[currentLine+1].time > currentTime) break;
+        if(lyrics[currentLine+1].time > currentTime + 500) break;
         currentLine++;
     }
 
@@ -27,6 +27,7 @@ const scrollLyrics = (instant = false) => {
 
     let lineHeight = (currentLine+1)*renderedHeight/4;
     let distToScroll = (lineHeight - renderedHeight/2) - lyricsController.scrollY;
+
     if(distToScroll > 0){
         let scrollDiff = lyricsController.canvasSize.renderedHeight/60 * distToScroll/100;
         let elem = playlistHeader.lyricsArea.querySelector('canvas').parentElement;

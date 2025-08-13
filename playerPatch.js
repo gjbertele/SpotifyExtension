@@ -178,6 +178,12 @@ const convertRawToTransformed = (rawData, rescaleH) => {
     return data;
 }
 
+const fixedRound = (x) => {
+    if(x < 0) return Math.floor(x);
+    if(x  == 0) return 1;
+    else return Math.ceil(x);
+}
+
 const taperArray = (arr, taperRange) => {
     let smoothedData = new Array(arr.length);
 
@@ -192,6 +198,7 @@ const taperArray = (arr, taperRange) => {
     return smoothedData;
 }
 
+
 const visualizerDraw = async () => {
     let ctx = playlistHeader.ctx;
     let h = playlistHeader.canvas.height;
@@ -203,7 +210,6 @@ const visualizerDraw = async () => {
         requestAnimationFrame(visualizerDraw);
         return;
     }
-
 
     let data = convertRawToTransformed(rawData, h);
     let smoothedData = smoothArray(data, 15);
@@ -399,7 +405,7 @@ const findFirstApplicable = (arr, averageBrightness, bucketSize) => {
             b = 255-b;
         }
 
-        console.log(brightness, [r,g,b]);
+        //console.log(brightness, [r,g,b]);
 
         return [r,g,b];
     }
