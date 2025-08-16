@@ -1,5 +1,37 @@
 let APIList, spotifyController, APIHandler, songPlaying = {}, messagingHandler;
 
+const patchFaultyImageCreation = () => {
+    const desc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
+
+    Object.defineProperty(HTMLImageElement.prototype, "src", {
+      set(value) {
+        if(isTargettedFaultyElement(this)){
+            this.setAttribute('loading','lazy');
+            if(!isElementVisible(this)) desc.set.call(this, '');
+            return;
+        }
+        return desc.set.call(this, value);
+      },
+      get() {
+        return desc.get.call(this);
+      }
+    });
+
+    return;
+}
+
+const isTargettedFaultyElement = (elem) => {
+    return elem.getAttribute('loading') == 'eager';
+}
+
+const isElementVisible = (elem) => {
+    if(elem.getAttribute('aria-hidden') == 'true') return false;
+    if(getComputedStyle(elem).display == 'none') return false;
+
+
+    return true;
+}
+
 
 const patchPlayerElement = () => {
     const originalPlay = HTMLMediaElement.prototype.play;
@@ -192,7 +224,7 @@ const createMessagingHandler = () => {
 }
 
 try {
-
+    patchFaultyImageCreation();
     patchPlayerElement();
     initializeWebpackAccess();
     createMessagingHandler();

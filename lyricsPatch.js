@@ -30,10 +30,12 @@ const scrollLyrics = (instant = false) => {
     let lineHeight = (currentLine+1)*renderedHeight/4;
     let distToScroll = (lineHeight - renderedHeight/2) - lyricsController.scrollY;
 
-    if(distToScroll > 0){
+    let elem = playlistHeader.lyricsArea.querySelector('canvas').parentElement;
+
+    if(distToScroll > renderedHeight){
+        elem.scrollBy(0, distToScroll);
+    } else if(distToScroll > 0){
         let scrollDiff = lyricsController.canvasSize.renderedHeight/60 * distToScroll/100;
-        let elem = playlistHeader.lyricsArea.querySelector('canvas').parentElement;
-       
         elem.scrollBy(0,Math.min(distToScroll,scrollDiff));
     }
 
@@ -240,10 +242,10 @@ const updateSongLyrics = async () => {
 const styleLyricsArea = (div) => {
     let rect = playlistHeader.canvas.getBoundingClientRect();
 
-    div.style.width = (document.body.clientWidth - rect.width - rect.x - 50) + 'px';
+    div.style.width = (document.body.clientWidth - rect.right - 50) + 'px';
     div.style.height = '100%';
     div.style.position = 'absolute';
-    div.style.right = '0%';
+    div.style.left = (rect.right - 100)+'px';
     div.style.top = '0%';
     div.style.setProperty('scrollbar-width','none !important');
 

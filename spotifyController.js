@@ -16,7 +16,7 @@ class SpotifyController {
         'wSize': 45,
         'wSum': 0,
         'alpha': 0.7,
-        'beatDist': 250,
+        'beatDist': 150,
         'songAvg': 0
     };
 
@@ -67,7 +67,7 @@ class SpotifyController {
 
     getAudioAmplitudes = async () => {
         this.amplitudeGets++;
-        
+
         if (this.audioNodes) {
             const analyzerNode = this.audioNodes['analyzerNode'];
 
@@ -246,12 +246,7 @@ class SpotifyController {
             if(beatDiff > this.beatController.beatDist){
                 this.fireSongEvent();
                 this.beatController.lastBeatTime = Date.now();
-            } else if(beatDiff < 0.5*this.beatController.beatDist){
-                this.beatController.alpha /= 0.97;
             }
-
-        } else if(beatDiff > 1000){
-            this.beatController.alpha *= 0.97;
         }
 
         this.beatController.songAvg = avg + this.beatController.alpha * sd;
@@ -273,7 +268,7 @@ class SpotifyController {
             'wSize': 45,
             'wSum': 0,
             'alpha': 0.7,
-            'beatDist': 250,
+            'beatDist': 150,
             'songAvg': 0
         };
 

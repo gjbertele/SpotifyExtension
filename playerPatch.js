@@ -146,7 +146,11 @@ const setImgElement = () => {
 }
 
 const createVisualizerCanvas = () => {
-    if(playlistHeader.imgElement == null || playlistHeader.imgElement == undefined) setImgElement();
+    if(playlistHeader.imgElement == null || playlistHeader.imgElement == undefined){
+        setImgElement();
+        setTimeout(createVisualizerCanvas, 10);
+        return;
+    }
 
     let titleArea = playlistHeader.titleArea;
 

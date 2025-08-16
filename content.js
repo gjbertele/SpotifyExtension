@@ -128,22 +128,21 @@ const injectcss = (fileName) => {
     document.head.insertBefore(temporaryElement, document.head.firstChild);
 }
 
-function testInject(){
+const testInject = () => {
     injectjs('spotifyController.js');
     injectjs('injectMessaging.js');
     injectjs('inject.js');
     injectjs('playerPatch.js');
     injectjs('lyricsPatch.js');
     injectjs('addons.js');
-    
+
+    return;
 }
 
 
 
 
-document.addEventListener('readystatechange',function(e){
+document.addEventListener('readystatechange', (e) => {
     if(document.readyState == 'interactive') testInject();
     if(document.readyState == 'complete') setup();
 });
-
-console.log(chrome.webRequest);
