@@ -139,5 +139,17 @@ const evaluateFunctionOnLoad = (func) => {
     }
 }
 
+const overridePushState = () => {
+    const originalPushState = history.pushState 
+    history.pushState = function(...args){
+        setTimeout(patchPlaylistHeader,150);
+        console.log('pushstated')
+        return originalPushState.apply(this, args);
+    }
+}
+
+
 window.addEventListener('spotifyControllerCreated', spotifyControllerCreated);
 window.addEventListener('mainAppLoaded', mainAppLoaded);
+
+overridePushState();

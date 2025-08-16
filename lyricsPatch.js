@@ -7,8 +7,10 @@ let lyricsController = {
         'renderedHeight':0
     },
     'autoscroll': true,
-    'displayLyrics': false
+    'displayLyrics': false,
+    'savedIconElement':null
 };
+
 
 const scrollLyrics = (instant = false) => {
     if(!instant && !lyricsController.autoscroll) return;
@@ -124,7 +126,7 @@ const onCanvasScroll = () => {
     let newScrollHeight = targetElement.scrollTop - lyricsController.canvasSize.renderedHeight/2;
     targetElement.scrollTo(0, lyricsController.canvasSize.renderedHeight*2/4);
 
-    //if(lyricsController.displayLyrics && newScrollHeight > 10) lyricsController.autoscroll = false;
+    if(lyricsController.displayLyrics && newScrollHeight > 10) lyricsController.autoscroll = false;
 
     let maxHeight = getLyricsMaxHeight();
 
@@ -262,7 +264,11 @@ const lyricsIconOnClick = () => {
 }
 
 const createLyricsIcon = () => {
-    const originalSVG = document.querySelector('[data-testid="lyrics-button"]').querySelector('svg');
+    let originalSVG = lyricsController.savedIconElement;
+    if(!originalSVG) originalSVG = document.querySelector('[data-testid="lyrics-button"]').querySelector('svg');
+    lyricsController.savedIconElement = originalSVG;
+
+
     const copiedSVG = originalSVG.cloneNode(true);
 
     const lyricsIcon = document.createElement('button');
@@ -272,7 +278,7 @@ const createLyricsIcon = () => {
 
     playlistHeader.lyricsArea.appendChild(lyricsIcon);
 
-    document.querySelector('[data-testid="lyrics-button"]').remove();
+    document.querySelector('[data-testid="lyrics-button"]')?.remove();
 
     lyricsIcon.onclick = lyricsIconOnClick;
 

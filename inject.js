@@ -179,6 +179,7 @@ window.addEventListener('spotifyExtensionMessage', async (e) => {
     }
 });
 
+
 const createMessagingHandler = () => {
     try {
         messagingHandler = new MessagingHandler();

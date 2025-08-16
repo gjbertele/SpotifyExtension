@@ -22,6 +22,24 @@ const allowedToPatchPlaylist = async () => {
     return songURI == albumURI;
 }
 
+const recolorHeaderContainer = (headerContainer) => {
+    headerContainer.firstChild.style.setProperty('--background-base', '#121212FF');
+    headerContainer.firstChild.style.setProperty('--background-base-min-contrast', '#121212FF');
+
+    return;
+}
+
+const removeRepeatableExcessElements = () => {
+    document.querySelector('[data-testid="edit-image-button"]')?.parentElement.parentElement.remove();
+    document.querySelector('[data-testid="control-button-npv"]')?.remove();
+    document.querySelector('[data-testid="pip-toggle-button"]')?.remove();
+    document.querySelector('[data-testid="fullscreen-mode-button"]')?.remove();
+    playlistHeader.titleArea.querySelector('span[data-encore-id="text"]')?.remove();
+    playlistHeader.titleArea.querySelector('figure')?.remove();
+
+    return;
+}
+
 const getPlaylistContainer = (mainContainer) => {
     let greaterReturn;
     mainContainer.childNodes.forEach((child) => {
@@ -37,28 +55,11 @@ const getPlaylistContainer = (mainContainer) => {
     return greaterReturn;
 }
 
-const recolorHeaderContainer = (headerContainer) => {
-    headerContainer.firstChild.style.setProperty('--background-base', '#121212FF');
-    headerContainer.firstChild.style.setProperty('--background-base-min-contrast', '#121212FF');
+const fixLowerColoring = (mainContainer) => {
+    let playlistContainer = getPlaylistContainer(mainContainer);
+    playlistContainer.style.setProperty('--background-base-70', '#121212FF');
 
     return;
-}
-
-const removeRepeatableExcessElements = () => {
-    document.querySelector('[data-testid="edit-image-button"]')?.parentElement.parentElement.remove();
-    playlistHeader.titleArea.querySelector('figure')?.remove();
-
-    let removed = false;
-    playlistHeader.titleArea.querySelectorAll('[data-encore-id="text"]').forEach((elem) => {
-        if(!removed && elem.tagName.toLowerCase() == 'span'){
-            elem.remove();
-            removed = true;
-        }
-    });
-    
-    document.querySelector('[data-testid="control-button-npv"]')?.remove();
-    document.querySelector('[data-testid="pip-toggle-button"]')?.remove();
-    document.querySelector('[data-testid="fullscreen-mode-button"]')?.remove();
 }
 
 const getChildWithStyleAttribute = (elem, attribute) => {
@@ -80,6 +81,29 @@ const removeExcessElements = (artistBar) => {
     return;
 }
 
+const createTitleArea = () => {
+    let titleArea = document.querySelector('[data-testid="entityTitle"]').parentElement;
+    playlistHeader.titleArea = titleArea;
+
+    return;
+}
+
+const createArtistBar = () => {
+    let artistBar = playlistHeader.titleArea.querySelector('[data-testid="creator-link"]').parentElement.parentElement;
+    let clonedChild = artistBar.cloneNode(true);
+    let artistArea = clonedChild.querySelector('a');
+    playlistHeader.artistArea = artistArea;
+
+    clonedChild.classList.remove(clonedChild.classList[0]);
+    clonedChild.removeAttribute('data-encore-id');
+
+    removeExcessElements(artistBar);
+
+    artistBar.parentElement.appendChild(clonedChild);
+
+    return;
+}
+
 const patchPlaylistHeader = async () => {
     if (!(await allowedToPatchPlaylist())) return;
 
@@ -91,27 +115,13 @@ const patchPlaylistHeader = async () => {
         return;
     }
 
+    fixLowerColoring(mainContainer);
+
     let headerContainer = mainContainer.childNodes[0];
     recolorHeaderContainer(headerContainer);
 
-    let playlistContainer = getPlaylistContainer(mainContainer);
-    playlistContainer.style.setProperty('--background-base-70', '#121212FF');
-
-
-    let titleArea = document.querySelector('[data-testid="entityTitle"]').parentElement;
-    playlistHeader.titleArea = titleArea;
-
-
-    let artistBar = titleArea.querySelector('[data-testid="creator-link"]').parentElement.parentElement;
-    let clonedChild = artistBar.cloneNode(true);
-    let artistArea = clonedChild.querySelector('a');
-    playlistHeader.artistArea = artistArea;
-
-    clonedChild.classList.remove(clonedChild.classList[0]);
-    clonedChild.removeAttribute('data-encore-id');
-    removeExcessElements(artistBar);
-
-    artistBar.parentElement.appendChild(clonedChild);
+    createTitleArea();
+    createArtistBar();
 
     setImgElement();
     spotifyController.addEventListener('newsong', updatePlaylistHeader);
