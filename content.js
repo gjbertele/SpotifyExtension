@@ -6,7 +6,7 @@ messagingHandler.initialize();
 const spotifyController = new Spotify();
 
 const log = (...args) => {
-    console.log('%c [SPOTIFY-EXTENSION]', 'color: #1DB954',...args);
+    console.log('%c [SPOTIFY-EXTENSION]', 'color: #1DB954', ...args);
 }
 
 const newSongPlaying = async (data) => {
@@ -21,7 +21,7 @@ const newSongPlaying = async (data) => {
 
 const updateSongList = async () => {
     let data = await chrome.storage.sync.get('songs');
-    
+
     songList = data.songs;
     return data.songs;
 }
@@ -60,7 +60,7 @@ const updateSongCount = async () => {
     log('Fetched song count data - ', data);
 
     let count = 1;
-    if(data && data.songCount) count = data.songCount + 1;
+    if (data && data.songCount) count = data.songCount + 1;
 
     chrome.storage.sync.set({
         'songCount': count
@@ -69,17 +69,17 @@ const updateSongCount = async () => {
 
 const setup = async () => {
     messagingHandler.addAlertListener((e) => {
-        if(e.detail.type == 'newSong'){
+        if (e.detail.type == 'newSong') {
             newSongPlaying(e.detail.songData);
         }
     });
 
     messagingHandler.addEventMessageListener(async (e) => {
-        if(e.detail.type == 'songListRequest'){
+        if (e.detail.type == 'songListRequest') {
             let newSongList = await updateSongList();
             let customEvent = new CustomEvent('spotifyExtensionMessageResponse', {
                 'detail': {
-                    'data':newSongList
+                    'data': newSongList
                 }
             });
             window.dispatchEvent(customEvent);
@@ -87,7 +87,7 @@ const setup = async () => {
     });
 
     messagingHandler.addRuntimeListener(async (msg, response) => {
-        if(msg.from != 'popup') return;
+        if (msg.from != 'popup') return;
         if (msg.subject === 'songInfo') {
             response({
                 songs: songList
@@ -101,7 +101,7 @@ const setup = async () => {
             deleteFromSongList(msg.songData);
             response(true);
         }
-        if(msg.subject == 'bassUpdate'){
+        if (msg.subject == 'bassUpdate') {
             spotifyController.bassBoost(msg.bassVal);
             response(true);
         }
@@ -115,7 +115,7 @@ const injectjs = (fileName, callback) => {
     temporaryElement.type = 'text/javascript';
     temporaryElement.src = chrome.runtime.getURL(`./${fileName}`);
 
-    if(callback) temporaryElement.onload = callback;
+    if (callback) temporaryElement.onload = callback;
 
     document.head.insertBefore(temporaryElement, document.head.firstChild);
 }
@@ -136,13 +136,12 @@ const testInject = () => {
     injectjs('lyricsPatch.js');
     injectjs('addons.js');
 
+
     return;
 }
 
 
-
-
 document.addEventListener('readystatechange', (e) => {
-    if(document.readyState == 'interactive') testInject();
-    if(document.readyState == 'complete') setup();
+    if (document.readyState == 'interactive') testInject();
+    if (document.readyState == 'complete') setup();
 });

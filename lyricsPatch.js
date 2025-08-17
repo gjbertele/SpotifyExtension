@@ -204,10 +204,15 @@ const createLyricsArea = () => {
 }
 
 const updateCanvasScaling = () => {
-    let rect = playlistHeader.canvas.getBoundingClientRect();
-    playlistHeader.lyricsCanvas.parentElement.style.width = (document.body.clientWidth - rect.width - rect.x - 70)+'px';
-    playlistHeader.lyricsCanvas.width = (document.body.clientWidth - rect.width - rect.x - 70);
-    playlistHeader.lyricsCanvas.style.width = playlistHeader.lyricsCanvas.width + 'px';
+    setTimeout(() => {
+        let rect = playlistHeader.canvas.getBoundingClientRect();
+        playlistHeader.lyricsCanvas.parentElement.style.width = (document.body.clientWidth - rect.width - rect.x - 70)+'px';
+        playlistHeader.lyricsCanvas.width = (document.body.clientWidth - rect.width - rect.x - 70);
+        playlistHeader.lyricsCanvas.style.width = playlistHeader.lyricsCanvas.width + 'px';
+        styleLyricsArea(playlistHeader.lyricsArea);
+    },50);
+    return;
+
 }
 
 
@@ -235,6 +240,7 @@ const updateSongLyrics = async () => {
 
     lyricsController.scrollY = 0;
     onCanvasScroll();
+
 
     return;
 }
@@ -310,6 +316,7 @@ const styleLyricsIcon = (svg) => {
 
     return;
 }
+
 
 const initializeLyricsArea = () => {
     createLyricsArea();

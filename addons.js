@@ -98,36 +98,60 @@ const checkProgressBarUpdate = () => {
         setBassBarValue(transformedX);
     }
     requestAnimationFrame(checkProgressBarUpdate);
+    
+    return;
 }
 
 const finalizeBassBarValue = () => {
     spotifyController.bassBoost(bassDiff);
+
+    return;
 }
 
 const setBassBarValue = (value) => {
     progressBar.style.setProperty('--progress-bar-transform', (value * 100) + '%');
     bassDiff = value * 20 - 10;
+
+    return;
+}
+
+const updatePlayerBar = () => {
+    const playerbar = document.querySelector('.encore-bright-accent-set');
+
+    playerbar.style.background = '#000';
+    playerbar.querySelector('span').style.color = '#FFF';
+    playerbar.querySelector('svg').style.filter = 'invert(100)';
+
+    return;
 }
 
 document.body.onmousemove = (e) => {
     mouse.x = e.clientX;
     mouse.y = e.clientY;
+
+    return;
 }
 
 
 const spotifyControllerCreated = () => {
     setupAttachLinks();
     setupCheckSong();
+    setTimeout(updatePlayerBar,1000);
+
+    return;
 }
 
 const mainAppLoaded = () => {
     setupBassBar();
-
+    
     setInterval(() => {
         document.querySelector('[aria-label="Hide Now Playing view"]')?.click();
     });
 
     evaluateFunctionOnLoad(patchPlaylistHeader);
+
+
+    return;
 }
 
 const evaluateFunctionOnLoad = (func) => {
@@ -137,6 +161,8 @@ const evaluateFunctionOnLoad = (func) => {
         console.log(`Error loading ${func.name}`,err);
         setTimeout(() => { evaluateFunctionOnLoad(func); }, 10);
     }
+
+    return;
 }
 
 const overridePushState = () => {

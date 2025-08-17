@@ -32,11 +32,9 @@
                 "menu.js",
                 "playerPatch.js",
                 "lyricsPatch.js",
-                "fft.js",
-                "loadspeed.js"
+                "webpackOverwrite.js"
             ],
             "matches":[
-                "<all_urls>",
                 "<all_urls>",
                 "<all_urls>",
                 "<all_urls>",
