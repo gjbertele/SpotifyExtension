@@ -1,0 +1,30 @@
+ie:    await playerAPI._harmony._streamer._listPlayer._getTrackPlayer()
+Ke:     playerAPI._harmony._streamer._listPlayer
+T:      playerAPI._harmony
+j:      playerAPI._harmony._streamer
+go:     playerAPI
+
+
+Ke._init called with ie (trackplayer)
+Ke._attachPlayerEvents called with ie
+Ke.play called with args (at instance, {reason: 'remote'})
+Ke.next called with args 'remove'
+Ke.pause called with no args
+Ke.resume called with no args
+Ke.setVolume called with float 0-1
+
+Ke._changeTrack called with args (p, 'unknown', 1)
+Ke.stop called with args ['endplay']
+Ke.play and ie.load used to load/play sidebar video wit uri spotify:canvas:___
+p returned by Ke.next
+
+
+T.setVolume called with (float 0-1, '@local')
+T._runOnDevice called with ('@local', ()=>this._streamer.setVolume(t), bound fn, {bypassFakeState: true})
+local parameter set to null for user interactions
+
+
+T.nextTrack called with (null, {track: undefined})
+T._runOnDevice called with (undefined, ()=>this._streamer.nextTrack('fwdbtn'), bound fn, {forceRemoteAction:undef, loggingParams:undeff})
+
+T._isTargetIdLocal  checks if arg == '@local'

@@ -1,7 +1,25 @@
-reattach on navigation? -> onpopstate
+make advanced search
+https://api.spotify.com/v1/search
 
-fix title sizing
+params: 
+    q: (string);
+    type: (string[]) ("album", "artist", "playlist", "track", "show", "episode", "audiobook")
+    limit: (int);
 
-fix lyrics sizing
+q eg: remaster track:Doxy artist:Miles Davis
+q filters:
+album, artist, track, year, tag:hipster
 
-fix player sizing
+https://api.spotify.com/v1/recommendations
+
+params: 
+    seed_artists: comma separated spotify artist uids
+    seed_genres: comma separeated genres
+    seed_tracks: comma separated track ids
+
+    genre names: https://gist.github.com/andytlr/4104c667a62d8145aa3a
+    genres by popularity: https://everynoise.com/everynoise1d-popularity.html
+    https://drive.google.com/file/d/1w7H_myVKMI1XIx2rPQb9hlr8ZoXXz3W8/view
+
+
+fix slow lyrics scrolling?

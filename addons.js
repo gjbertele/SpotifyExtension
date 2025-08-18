@@ -118,6 +118,8 @@ const setBassBarValue = (value) => {
 const updatePlayerBar = () => {
     const playerbar = document.querySelector('.encore-bright-accent-set');
 
+    if(!playerbar) return;
+
     playerbar.style.background = '#000';
     playerbar.querySelector('span').style.color = '#FFF';
     playerbar.querySelector('svg').style.filter = 'invert(100)';

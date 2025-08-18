@@ -276,7 +276,13 @@ class SpotifyController {
 
     }
 
-    initialize = () => {
+    setMediaElement = async () => {
+        this.mediaElement = (await this.playerAPI._harmony._streamer._listPlayer._getTrackPlayer())._player;
+        
+        return;
+    }
+
+    createBroadcasting = () => {
         this.messagingHandler = new MessagingHandler();
         this.messagingHandler.initializeBroadcastHandler();
 
@@ -285,8 +291,16 @@ class SpotifyController {
             if (e.data.data.type == 'dataUpdate') this.#dataUpdateHandler(e.data);
         });
 
+        return;
+    }
+
+    initialize = () => {
+        this.createBroadcasting();
+
         this.songEventDetect();
-        this.addEventListener('newsong', this.resetBeatController)
+        this.addEventListener('newsong', this.resetBeatController);
+
+        this.setMediaElement();
 
         return;
     }

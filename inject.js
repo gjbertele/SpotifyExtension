@@ -1,32 +1,23 @@
-let APIList, spotifyController, APIHandler, songPlaying = {}, messagingHandler;
+let APIList, spotifyController, APIHandler, songPlaying = {},
+    messagingHandler, trackerClassInstance;
 
-const patchFaultyImageCreation = () => {
-    const desc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
-
-    Object.defineProperty(HTMLImageElement.prototype, "src", {
-      set(value) {
-        if(isTargettedFaultyElement(this)){
-            this.setAttribute('loading','lazy');
-            if(!isElementVisible(this)) desc.set.call(this, '');
-            return;
+const resolverProxy = {
+    resolve: function(symbol) {
+        for (let i = 0; i < APIList.length; i++) {
+            if (APIList[i][0] == symbol) return APIList[i][1].instance;
         }
-        return desc.set.call(this, value);
-      },
-      get() {
-        return desc.get.call(this);
-      }
-    });
+        return;
+    }
+};
 
-    return;
-}
 
 const isTargettedFaultyElement = (elem) => {
     return elem.getAttribute('loading') == 'eager';
 }
 
 const isElementVisible = (elem) => {
-    if(elem.getAttribute('aria-hidden') == 'true') return false;
-    if(getComputedStyle(elem).display == 'none') return false;
+    if (elem.getAttribute('aria-hidden') == 'true') return false;
+    if (getComputedStyle(elem).display == 'none') return false;
 
 
     return true;
@@ -36,20 +27,37 @@ const isElementVisible = (elem) => {
 const patchPlayerElement = () => {
     const originalPlay = HTMLMediaElement.prototype.play;
 
-    HTMLMediaElement.prototype.play = function (...args) {
-        if(this.parentElement == null && this.src && spotifyController){
-            spotifyController.mediaElement = this; 
-            
+    HTMLMediaElement.prototype.play = function(...args) {
+        if (this.parentElement == null && this.src && spotifyController) {
+            spotifyController.mediaElement = this;
             insertAudioContext(this);
         }
 
         return originalPlay.apply(this, args);
     }
-    
+
+}
+
+const patchTrackerClass = async () => {
+    const trackerClass = (await playerAPI._harmony._streamer._listPlayer._getTrackPlayer())._tracker.constructor.prototype
+
+    const original = trackerClass._checkPlayedThreshold;
+
+    trackerClass._checkPlayedThreshold = function(...args){
+        if(!trackerClassInstance) trackerClassInstance = this;
+        return original.apply(this, args);
+    }
+
+    return;
+
+}
+
+const getSongDownloadUrl = () => {
+    return trackerClassInstance ? Object.keys(trackerClassInstance._trackingData._cdnURLTracker._map)[0] : null;
 }
 
 const insertAudioContext = (element) => {
-    if(spotifyController.audioCtx) return;
+    if (spotifyController.audioCtx) return;
 
     const audioCtx = new AudioContext();
     const source = audioCtx.createMediaElementSource(element);
@@ -68,8 +76,8 @@ const insertAudioContext = (element) => {
 
     spotifyController.audioCtx = audioCtx;
     spotifyController.audioNodes = {
-        'analyzerNode':analyzerNode,
-        'biquadNode':biquadNode
+        'analyzerNode': analyzerNode,
+        'biquadNode': biquadNode
     }
 }
 
@@ -89,14 +97,14 @@ const initializeWebpackAccess = () => {
 const getAPIs = async () => {
     if (APIList) return APIList;
     APIHandler = null;
-    for(let id in webpackRequire.m){
+    for (let id in webpackRequire.m) {
         let mod = webpackRequire(id);
-        if(mod.createPlatformWeb){
+        if (mod.createPlatformWeb) {
             APIHandler = mod;
             break;
         }
     }
-    if(APIHandler == null) throw new Error('No API handler found');
+    if (APIHandler == null) throw new Error('No API handler found');
 
     let y = await APIHandler.createPlatformWeb();
     let z = y.getRegistry();
@@ -112,7 +120,7 @@ window.getPlayerAPI = getPlayerAPI;
 
 const createPlayerAPI = async () => {
     window.playerAPI = await getPlayerAPI();
-    if (window.playerAPI == null){
+    if (window.playerAPI == null) {
         setTimeout(createPlayerAPI, 1000);
     } else {
         playerAPICreated();
@@ -123,11 +131,15 @@ const createPlayerAPI = async () => {
 document.body.onload = createPlayerAPI;
 
 const playerAPICreated = () => {
+    patchTrackerClass();
 
     spotifyController = new SpotifyController();
     spotifyController.setPlayerAPI(window.playerAPI);
     spotifyController.setAPIHandler(APIHandler);
     spotifyController.initialize();
+
+
+    //completelyPatchClass(window.playerAPI._harmony._streamer.constructor);
 
     window.spotifyController = spotifyController;
 
@@ -136,7 +148,7 @@ const playerAPICreated = () => {
 
     let newEvent = new CustomEvent('spotifyControllerCreated');
     window.dispatchEvent(newEvent);
-    
+
     return;
 }
 
@@ -148,14 +160,14 @@ const fireMainAppLoad = () => {
 }
 
 const playerUpdated = (e) => {
-    if(e.data.item.name == songPlaying.title && e.data.item.artists[0].name == songPlaying.artist) return;
+    if (e.data.item.name == songPlaying.title && e.data.item.artists[0].name == songPlaying.artist) return;
 
-    if(!songPlaying.title) fireMainAppLoad();
+    if (!songPlaying.title) fireMainAppLoad();
 
     songPlaying.title = e.data.item.name;
     songPlaying.artist = e.data.item.artists[0].name;
     messagingHandler.postAlert({
-        'type':'newSong',
+        'type': 'newSong',
         'songData': songPlaying
     });
 
@@ -163,9 +175,9 @@ const playerUpdated = (e) => {
 }
 
 const commandHandler = (detail) => {
-    if(detail.data == 'seekforwards'){
+    if (detail.data == 'seekforwards') {
         spotifyController.seekForwards(detail.time * 1000);
-    } else if(detail.data == 'bassboost'){
+    } else if (detail.data == 'bassboost') {
         spotifyController.bassBoost(detail.dbDiff);
     } else if (spotifyController[detail.data]) {
         spotifyController[detail.data]();
@@ -177,21 +189,21 @@ const commandHandler = (detail) => {
 
 
 const songDataRequest = (detail) => {
-        let newDetail = {}
+    let newDetail = {}
 
-        if (window.playerAPI != null && window.playerAPI._harmony._controller._state) {
-            let controller = window.playerAPI._harmony._controller;
-            newDetail.data = {
-                'title': controller._state.track_window.current_track.name,
-                'artist': controller._state.track_window.current_track.artists[0].name,
-                'time': controller._progressPosition,
-                'id':detail.id
-            }
+    if (window.playerAPI != null && window.playerAPI._harmony._controller._state) {
+        let controller = window.playerAPI._harmony._controller;
+        newDetail.data = {
+            'title': controller._state.track_window.current_track.name,
+            'artist': controller._state.track_window.current_track.artists[0].name,
+            'time': controller._progressPosition,
+            'id': detail.id
         }
+    }
 
-        messagingHandler.postResponse(newDetail)
+    messagingHandler.postResponse(newDetail)
 
-        return;
+    return;
 }
 
 
@@ -217,17 +229,56 @@ const createMessagingHandler = () => {
         messagingHandler = new MessagingHandler();
         messagingHandler.initializeConnectionChannel();
         console.log('Created handler');
-    } catch (err){
+    } catch (err) {
         console.log(err);
-        setTimeout(createMessagingHandler,10);
+        setTimeout(createMessagingHandler, 10);
     }
 }
 
+let globalIE;
+
+const completelyPatchClass = (obj, callback) => {
+    let keys = Object.getOwnPropertyNames(obj.prototype)
+
+    for (let idx in keys) {
+        let key = keys[idx];
+
+        try {
+            if (typeof obj.prototype[key] == 'function') {
+                const original = obj.prototype[key];
+                console.log('patched function ',key);
+                obj.prototype[key] = function(...args) {
+                    console.log(`${key} called with args`, args);
+                    if(args[0] && args[0].constructor.name == 'ie' && !globalIE) globalIE = args[0]; 
+                    return original.apply(this, args);
+                }
+            }
+        } catch {}
+
+    }
+
+    return;
+}
+
+const completelyPatchKe = () => {
+    let Ke = webpackRequire(55846).is;
+    completelyPatchClass(Ke);
+
+    return;
+}
+
+const getCurationAPI = () => {
+    return APIList[43][1].factory(resolverProxy);
+}
+
+const getShuffleAPI = () => {
+    return APIList[29][1].factory(resolverProxy);
+}
+
 try {
-    patchFaultyImageCreation();
     patchPlayerElement();
     initializeWebpackAccess();
     createMessagingHandler();
-} catch(err){
+} catch (err) {
     console.log(err);
 }
