@@ -52,6 +52,30 @@ const patchTrackerClass = async () => {
 
 }
 
+const isOfNativeType = (obj) => {
+    return !obj || typeof obj != 'object' || obj.constructor.toString() == 'function Function() { [native code] }';
+}
+
+const crawlObject = (obj, pattern, path = []) => {
+    if(path.length > 10) return;
+    
+    if(obj == pattern){
+        console.log(path);
+        return;
+    }
+    
+    if(isOfNativeType(obj)) return;
+    
+    for(let i in obj){
+        path.push(i);
+        crawlObject(obj[i], pattern, path);
+        path.pop();
+    }
+
+    return;
+
+}
+
 const getSongDownloadUrl = () => {
     return trackerClassInstance ? Object.keys(trackerClassInstance._trackingData._cdnURLTracker._map)[0] : null;
 }
@@ -130,7 +154,7 @@ const createPlayerAPI = async () => {
 
 document.body.onload = createPlayerAPI;
 
-const playerAPICreated = () => {
+const playerAPICreated = async () => {
     patchTrackerClass();
 
     spotifyController = new SpotifyController();
@@ -138,7 +162,7 @@ const playerAPICreated = () => {
     spotifyController.setAPIHandler(APIHandler);
     spotifyController.initialize();
 
-
+    //completelyPatchClass((await playerAPI._harmony._streamer._listPlayer._getTrackPlayer())._audioResolver.constructor)
     //completelyPatchClass(window.playerAPI._harmony._streamer.constructor);
 
     window.spotifyController = spotifyController;
@@ -235,7 +259,8 @@ const createMessagingHandler = () => {
     }
 }
 
-let globalIE;
+let globalLoadedList;
+
 
 const completelyPatchClass = (obj, callback) => {
     let keys = Object.getOwnPropertyNames(obj.prototype)
@@ -248,21 +273,19 @@ const completelyPatchClass = (obj, callback) => {
                 const original = obj.prototype[key];
                 console.log('patched function ',key);
                 obj.prototype[key] = function(...args) {
-                    console.log(`${key} called with args`, args);
-                    if(args[0] && args[0].constructor.name == 'ie' && !globalIE) globalIE = args[0]; 
-                    return original.apply(this, args);
+                    if(key != '_translatePosition') console.log(`${key} called with args`, args);
+                    
+                    if(!globalLoadedList) globalLoadedList = this._loadedList;
+
+                    let result = original.apply(this, args);
+                    //console.log('result:',result);
+                    //console.trace();
+                    return result;
                 }
             }
         } catch {}
 
     }
-
-    return;
-}
-
-const completelyPatchKe = () => {
-    let Ke = webpackRequire(55846).is;
-    completelyPatchClass(Ke);
 
     return;
 }

@@ -3,7 +3,7 @@ Ke:     playerAPI._harmony._streamer._listPlayer
 T:      playerAPI._harmony
 j:      playerAPI._harmony._streamer
 go:     playerAPI
-
+at: _loadedList
 
 Ke._init called with ie (trackplayer)
 Ke._attachPlayerEvents called with ie
@@ -28,3 +28,11 @@ T.nextTrack called with (null, {track: undefined})
 T._runOnDevice called with (undefined, ()=>this._streamer.nextTrack('fwdbtn'), bound fn, {forceRemoteAction:undef, loggingParams:undeff})
 
 T._isTargetIdLocal  checks if arg == '@local'
+
+
+Ft is filetype class
+
+
+ie._createContent called with args (FILETYPE??, default, default)
+filetype comes from loadedList.peekNext
+
