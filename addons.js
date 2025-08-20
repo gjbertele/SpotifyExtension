@@ -151,16 +151,17 @@ const mainAppLoaded = () => {
     });
 
     evaluateFunctionOnLoad(patchPlaylistHeader);
+    evaluateFunctionOnLoad(patchSearchElement, true);
 
 
     return;
 }
 
-const evaluateFunctionOnLoad = (func) => {
+const evaluateFunctionOnLoad = (func, silent = false) => {
     try {
         func();
     } catch (err){
-        console.log(`Error loading ${func.name}`,err);
+        if(!silent) console.log(`Error loading ${func.name}`,err);
         setTimeout(() => { evaluateFunctionOnLoad(func); }, 10);
     }
 

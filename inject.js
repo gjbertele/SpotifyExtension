@@ -43,33 +43,11 @@ const patchTrackerClass = async () => {
 
     const original = trackerClass._checkPlayedThreshold;
 
+
     trackerClass._checkPlayedThreshold = function(...args){
-        if(!trackerClassInstance) trackerClassInstance = this;
+        trackerClassInstance = this;
+        
         return original.apply(this, args);
-    }
-
-    return;
-
-}
-
-const isOfNativeType = (obj) => {
-    return !obj || typeof obj != 'object' || obj.constructor.toString() == 'function Function() { [native code] }';
-}
-
-const crawlObject = (obj, pattern, path = []) => {
-    if(path.length > 10) return;
-    
-    if(obj == pattern){
-        console.log(path);
-        return;
-    }
-    
-    if(isOfNativeType(obj)) return;
-    
-    for(let i in obj){
-        path.push(i);
-        crawlObject(obj[i], pattern, path);
-        path.pop();
     }
 
     return;
@@ -161,9 +139,6 @@ const playerAPICreated = async () => {
     spotifyController.setPlayerAPI(window.playerAPI);
     spotifyController.setAPIHandler(APIHandler);
     spotifyController.initialize();
-
-    //completelyPatchClass((await playerAPI._harmony._streamer._listPlayer._getTrackPlayer())._audioResolver.constructor)
-    //completelyPatchClass(window.playerAPI._harmony._streamer.constructor);
 
     window.spotifyController = spotifyController;
 
@@ -259,9 +234,6 @@ const createMessagingHandler = () => {
     }
 }
 
-let globalLoadedList;
-
-
 const completelyPatchClass = (obj, callback) => {
     let keys = Object.getOwnPropertyNames(obj.prototype)
 
@@ -275,11 +247,8 @@ const completelyPatchClass = (obj, callback) => {
                 obj.prototype[key] = function(...args) {
                     if(key != '_translatePosition') console.log(`${key} called with args`, args);
                     
-                    if(!globalLoadedList) globalLoadedList = this._loadedList;
-
                     let result = original.apply(this, args);
-                    //console.log('result:',result);
-                    //console.trace();
+
                     return result;
                 }
             }
@@ -296,6 +265,27 @@ const getCurationAPI = () => {
 
 const getShuffleAPI = () => {
     return APIList[29][1].factory(resolverProxy);
+}
+
+const getAPIByFunctionName = (name) => {
+    let root;
+    for(let i in document.querySelector("#main")) if(i.startsWith('__reactContainer')) root = document.querySelector('#main')[i];
+    return findFiberWithSearch(root, name);
+}
+
+const getSearchAPI = () => {
+    return getAPIByFunctionName('getSearchResults');
+}
+
+const findFiberWithSearch = (node, query) => {
+    if (!node) return null;
+    if (node.pendingProps && node.pendingProps.value && node.pendingProps.value.api) {
+      let api = node.pendingProps.value.api;
+      if (api && typeof api[query] === "function") {
+        return api;
+      }
+    }
+    return findFiberWithSearch(node.child, query) || findFiberWithSearch(node.sibling, query);
 }
 
 try {

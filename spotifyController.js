@@ -276,6 +276,49 @@ class SpotifyController {
 
     }
 
+    search = async (params) => {
+        const queryString = this.buildQuery(params);
+
+        if(!this.searchAPI) this.searchAPI = getSearchAPI();
+
+        return await this.searchAPI.getSearchResults({
+            "searchTerm": queryString,
+            "offset": 0,
+            "limit": 25,
+            "numberOfTopResults": 25,
+            "includeAudiobooks": false,
+            "includeArtistHasConcertsField": false,
+            "includePreReleases": false,
+            "includeLocalConcertsField": false,
+            "includeAuthors": false
+          }, (new AbortController()).signal);
+    }
+
+    buildPlayableContext = (uri) => {
+        return {
+            'contextURI':uri,
+            'loggingParams': {
+                'interactionId': null,
+                'pageInstanceId': null, 
+            },
+            'playOrigin': {
+                    'featureIdentifier': 'search',
+                    'referrerIdentifier': 'search'
+            }
+        };
+    }
+
+    playURI = async (uri) => {
+        return playerAPI._harmony.playURI(uri, null, null);
+    }
+
+    buildQuery = (params) => {
+        let str = params.query;
+        if(params.genres?.length > 0) str += ' genre:'+params.genres.map(i => i = encodeURIComponent(i)).join(',');
+        if(params.artist != '') str += ' artist:'+encodeURIComponent(params.artist);
+        return encodeURIComponent(str);
+    }
+
     setMediaElement = async () => {
         this.mediaElement = (await this.playerAPI._harmony._streamer._listPlayer._getTrackPlayer())._player;
         
@@ -296,6 +339,7 @@ class SpotifyController {
 
     initialize = () => {
         this.createBroadcasting();
+        this.searchAPI = getSearchAPI();
 
         this.songEventDetect();
         this.addEventListener('newsong', this.resetBeatController);

@@ -132,8 +132,10 @@ const testInject = () => {
     injectjs('spotifyController.js');
     injectjs('injectMessaging.js');
     injectjs('inject.js');
+    injectjs('genreList.js');
     injectjs('playerPatch.js');
     injectjs('lyricsPatch.js');
+    injectjs('searchPatch.js');
     injectjs('addons.js');
 
 

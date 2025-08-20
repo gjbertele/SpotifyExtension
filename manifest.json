@@ -29,10 +29,10 @@
                 "spotifyController.js",
                 "addons.js",
                 "injectMessaging.js",
-                "menu.js",
                 "playerPatch.js",
                 "lyricsPatch.js",
-                "webpackOverwrite.js"
+                "searchPatch.js",
+                "genreList.js"
             ],
             "matches":[
                 "<all_urls>",
