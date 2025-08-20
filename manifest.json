@@ -3,10 +3,6 @@
     "name": "Spotify Extension",
     "version": "1.0",
     "description": "",
-    "action": {
-      "default_popup": "popup.html",
-      "default_icon": "spotify.png"
-    },
     "permissions": [
       "activeTab",
       "storage"

@@ -10,47 +10,11 @@ const log = (...args) => {
 }
 
 const newSongPlaying = async (data) => {
-    updateSongList();
-
     updateSongCount();
 
     log('New song playing - ', data);
 
     return;
-}
-
-const updateSongList = async () => {
-    let data = await chrome.storage.sync.get('songs');
-
-    songList = data.songs;
-    return data.songs;
-}
-
-const pushSongList = async (song) => {
-    let songs = await updateSongList();
-    songs.push(song);
-    let data = await chrome.storage.sync.set({
-        'songs': songs
-    });
-    log('Pushed to songlist - ', song);
-    return data;
-}
-
-const deleteFromSongList = async (song) => {
-    let songs = await updateSongList();
-
-    for (let i = 0; i < songs.length; i++) {
-        if (songs[i].title == song.title && songs[i].artist == song.artist && songs[i].skipTime == song.skipTime) {
-            songs.splice(i, 1);
-            i--;
-        }
-    }
-
-    let data = await chrome.storage.sync.set({
-        'songs': songs
-    });
-    log('Deleted from songlist - ', song);
-    return data;
 }
 
 
@@ -73,40 +37,6 @@ const setup = async () => {
             newSongPlaying(e.detail.songData);
         }
     });
-
-    messagingHandler.addEventMessageListener(async (e) => {
-        if (e.detail.type == 'songListRequest') {
-            let newSongList = await updateSongList();
-            let customEvent = new CustomEvent('spotifyExtensionMessageResponse', {
-                'detail': {
-                    'data': newSongList
-                }
-            });
-            window.dispatchEvent(customEvent);
-        }
-    });
-
-    messagingHandler.addRuntimeListener(async (msg, response) => {
-        if (msg.from != 'popup') return;
-        if (msg.subject === 'songInfo') {
-            response({
-                songs: songList
-            });
-        }
-        if (msg.subject === 'songUpdate') {
-            pushSongList(msg.songData);
-            response(true);
-        }
-        if (msg.subject === 'deleteSong') {
-            deleteFromSongList(msg.songData);
-            response(true);
-        }
-        if (msg.subject == 'bassUpdate') {
-            spotifyController.bassBoost(msg.bassVal);
-            response(true);
-        }
-    });
-
 }
 
 
