@@ -21,7 +21,8 @@ let searchController = {
 
 
 const patchSearchElement = () => {
-    if(window.location.href.includes('search') == false) return;
+    const href = window.location.href;
+    if(!href.includes('search') || !href.includes('#advSearch')) return;
     
     searchController.elements.searchBar = document.querySelector('[data-testid=search-input]').parentElement;
     searchController.elements.searchArea = document.querySelector('#searchPage');
@@ -31,8 +32,8 @@ const patchSearchElement = () => {
     searchController.elements.searchArea.style.width = `${calculatedWidth}px`;
 
 
-    initializeCarouselBuilder();
     initializeResultRowBuilder();
+    initializeCarouselBuilder();
     createHiddenSearchBar();
     initializeAdvancedSearch();
 
@@ -535,12 +536,16 @@ const playURI = (uri) => {
 }
 
 const initializeResultRowBuilder = () => {
+    if(searchController.elements.rowTemplateElement) return;
+    
     const rowElement = document.querySelector('[data-testid="tracklist-row"]');
     const cloned = rowElement.cloneNode(true);
 
-    cloned.querySelector('[aria-checked=true]')?.remove();
 
     searchController.elements.rowTemplateElement = cloned;
+    
+    cloned.querySelector('[aria-checked=true]')?.remove();
+
 
     return;
 }

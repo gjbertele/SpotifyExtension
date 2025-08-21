@@ -5,3 +5,5 @@ load more search results
 fix artist name getting deleted
 
 make playing element livelier
+
+advanced search api
