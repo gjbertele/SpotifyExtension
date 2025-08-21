@@ -32,10 +32,14 @@ class MessageHandler {
     
     addAlertListener = (callback) => {
         window.addEventListener('spotifyExtensionAlert', callback);
+        
+        return;
     }
 
     addEventMessageListener = (callback) => {
         window.addEventListener('spotifyExtensionMessage', callback);
+
+        return;
     }
 
     addRuntimeListener = (callback, overrideForward = false) => {
@@ -43,13 +47,17 @@ class MessageHandler {
             if(msg.from != 'popup') return;
             if(msg.forward == overrideForward || (!msg.forward && !overrideForward)) callback(msg, response);
         });
+
+        return;
     }
 
     sendRuntimeMessage = async (data) => {
         chrome.runtime.sendMessage({
                 from: 'content',
                 ...data
-            });
+        });
+
+        return;
     }
 
     initialize = () => {
@@ -65,6 +73,8 @@ class MessageHandler {
 
             return;
         }, true);
+
+        return;
     }
 }
 

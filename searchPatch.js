@@ -522,7 +522,6 @@ const buildResultElement = (data) => {
     timeElement.textContent = duration;
 
     imgElement.addEventListener('click', playURI(uri));
-    titleElement.addEventListener('click', playURI(uri));
 
     container.appendChild(element);
 

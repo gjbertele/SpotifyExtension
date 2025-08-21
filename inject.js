@@ -1,5 +1,5 @@
 let APIList, spotifyController, APIHandler, songPlaying = {},
-    messagingHandler, trackerClassInstance;
+    messagingHandler, trackerClassInstance, htClassInstance;
 
 const resolverProxy = {
     resolve: function(symbol) {
@@ -50,13 +50,23 @@ const patchTrackerClass = async () => {
         return original.apply(this, args);
     }
 
+    const prot = (await playerAPI._harmony._streamer._listPlayer._getTrackPlayer()).constructor.prototype;
+
+    const originalCreation = prot._createContent;
+
+    prot._createContent = async function(...args){
+        let response = originalCreation.apply(this, args);
+        
+        htClassInstance = await response;
+
+        return response;
+    }
+
+
     return;
 
 }
 
-const getSongDownloadUrl = () => {
-    return trackerClassInstance ? Object.keys(trackerClassInstance._trackingData._cdnURLTracker._map)[0] : null;
-}
 
 const insertAudioContext = (element) => {
     if (spotifyController.audioCtx) return;

@@ -4,10 +4,4 @@ load more search results
 
 fix artist name getting deleted
 
-update artist and track uri in search results
-
-remove other stuff
-
-resize capability to search
-
 make playing element livelier

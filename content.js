@@ -42,9 +42,7 @@ const setup = async () => {
 
 const injectjs = (fileName, callback) => {
     let temporaryElement = document.createElement('script');
-    temporaryElement.type = 'text/javascript';
     temporaryElement.src = chrome.runtime.getURL(`./${fileName}`);
-
     if (callback) temporaryElement.onload = callback;
 
     document.head.insertBefore(temporaryElement, document.head.firstChild);

@@ -171,11 +171,15 @@ const evaluateFunctionOnLoad = (func, silent = false) => {
 const overridePushState = () => {
     const originalPushState = history.pushState 
     history.pushState = function(...args){
-        setTimeout(patchPlaylistHeader,150);
-        console.log('pushstated')
+        setTimeout(patchPlaylistHeader, 150);
+        if(window.location.href.includes('search') == false) setTimeout(() => {
+            evaluateFunctionOnLoad(patchSearchElement);
+        }, 150);
+
         return originalPushState.apply(this, args);
     }
 }
+
 
 
 window.addEventListener('spotifyControllerCreated', spotifyControllerCreated);
