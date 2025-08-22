@@ -3,7 +3,7 @@ Ke:     playerAPI._harmony._streamer._listPlayer
 T:      playerAPI._harmony
 j:      playerAPI._harmony._streamer
 go:     playerAPI
-at: _loadedList
+at:     ie._loadedList
 
 Ke._init called with ie (trackplayer)
 Ke._attachPlayerEvents called with ie
@@ -13,7 +13,7 @@ Ke.pause called with no args
 Ke.resume called with no args
 Ke.setVolume called with float 0-1
 
-Ke._changeTrack called with args (p, 'unknown', 1)
+Ke._changeTrack called with args (p, 'remote', 10)
 Ke.stop called with args ['endplay']
 Ke.play and ie.load used to load/play sidebar video wit uri spotify:canvas:___
 p returned by Ke.next

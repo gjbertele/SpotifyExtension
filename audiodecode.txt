@@ -1,0 +1,27 @@
+Nt class:
+constructor takes in arg of class Ht
+
+n = _getBufferSetForSegment (e,t)
+
+
+
+Tt.appendBufferData (n, e, s)
+e is segment data
+
+Pt in ie._bufferManager
+Nt in Pt._currentFillOperation
+
+ie._currentContent is of type Ht
+
+ie._requestLicense gets license
+
+
+me.getCDNURL
+
+called from Ft._getCDNURLs
+
+called from jt.load, also has its own;
+Ft might be file resolver from constructor?
+also from Ht.getCDNURLs()
+Ht extends Ft
+Ft extends ut;

@@ -93,6 +93,7 @@ const createArtistBar = () => {
     let clonedChild = artistBar.cloneNode(true);
     let artistArea = clonedChild.querySelector('a');
     playlistHeader.artistArea = artistArea;
+    
 
     clonedChild.classList.remove(clonedChild.classList[0]);
     clonedChild.removeAttribute('data-encore-id');

@@ -1,9 +1,8 @@
-mimic audiocontext using song download url
-
 load more search results
 
 fix artist name getting deleted
 
 make playing element livelier
 
-advanced search api
+get full song download -> mimic 206 requests from Ht?
+figure out how it's widevine encoded or spoof 206 from secondary page

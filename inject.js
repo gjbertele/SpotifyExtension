@@ -1,5 +1,6 @@
 let APIList, spotifyController, APIHandler, songPlaying = {},
-    messagingHandler, trackerClassInstance, htClassInstance;
+    messagingHandler, trackerClassInstance, htClassInstance, 
+    keInstance, atInstance, wInstance;
 
 const resolverProxy = {
     resolve: function(symbol) {
@@ -277,6 +278,17 @@ const getShuffleAPI = () => {
     return APIList[29][1].factory(resolverProxy);
 }
 
+const patchInvolvedClasses = () => {
+    const original = webpackRequire(55846).is.prototype.setVolume;
+    webpackRequire(55846).is.prototype.setVolume = async function(...args){
+        keInstance = this;
+        atInstance = keInstance._loadedList;
+        wInstance = await atInstance._manifestTrackResolver._descriptor;
+
+        return original.apply(this, args);
+    }
+}
+
 const getAPIByFunctionName = (name) => {
     let root;
     for(let i in document.querySelector("#main")) if(i.startsWith('__reactContainer')) root = document.querySelector('#main')[i];
@@ -298,9 +310,25 @@ const findFiberWithSearch = (node, query) => {
     return findFiberWithSearch(node.child, query) || findFiberWithSearch(node.sibling, query);
 }
 
+const patchKeClass = () => {
+    const prot = webpackRequire(55846).is.prototype;
+    window.keInstances = [];
+
+    const og = prot._init;
+    prot._init = async function(...args){
+        let response = og.apply(this, args);
+        window.keInstances.push(this);
+        return response;
+    }
+
+
+    return;
+}
+
 try {
     patchPlayerElement();
     initializeWebpackAccess();
+    patchKeClass();
     createMessagingHandler();
 } catch (err) {
     console.log(err);
